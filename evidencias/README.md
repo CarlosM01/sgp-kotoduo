@@ -10,3 +10,4 @@
 | E-06 | `E-06_integridad-postgres-rechazos.png` / `.log` | 8 escrituras inválidas rechazadas (NOT NULL, FK, CHECK de estado, formato de código, UNIQUE, cantidad, stock, máquina de estados) y verificación de que no se guardó nada | F1, 3.1.2 |
 | E-07 | `E-07_integridad-mongo-validador.png` / `.log` | 4 documentos inválidos rechazados por el validador de `bitacora_eventos` | F1, 3.1.2 |
 | E-08 | `E-08_volumen-5000-ot.log` | Carga de 5.000 OT y 30.000 etapas | F1, CP-23 |
+| E-09 | `E-09_issue-12-f1-cerrado.png` | Issue #12 (F1) cerrado con el resumen, los commits y los enlaces a las evidencias | F1, 3.1.3.6 |
