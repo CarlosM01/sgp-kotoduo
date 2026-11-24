@@ -1,0 +1,18 @@
+# E-08 · Script de volumen: 5.000 OT y 30.000 etapas (base para CP-23)
+# Fecha: 2026-11-24 13:33 -03 · rama: feat/f1-database · base: e013078 (cambios F1 sin commitear)
+# Comando: docker compose exec -T postgres psql -U sgp -d sgp_kotoduo -X -f /sgp/volumen.sql
+
+BEGIN
+SET
+DELETE 5000
+SELECT 5000
+INSERT 0 5000
+INSERT 0 30000
+COMMIT
+ANALYZE
+ANALYZE
+ ot_volumen | etapas_volumen 
+------------+----------------
+       5000 |          30000
+(1 row)
+

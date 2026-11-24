@@ -9,3 +9,7 @@
 | D5 | Estructura | Monorepo con workspaces de npm: `api/`, `web/`, `db/`, `docs/`, `evidencias/`. | Un solo `clone` + `compose` para la instalación y la demo. | — |
 | D6 | Arquitectura de la API | Capas: `dominio` (reglas puras), `aplicacion` (casos de uso), `infraestructura` (PG, Mongo, HTTP). | Reglas testeables con Vitest sin base de datos (CP-01 a CP-08). | — |
 | D7 | Scripts de BD | Se reutilizan sin cambios los de ES2 (`informe-2/bd`). Las tablas fuera del MVP (`aprobacion_diseno`, `outbox_evento`) se conservan sin uso. | Trazabilidad con el diseño aprobado. | — |
+| D8 | Marca `DEMO-xx` | Va en el título de la OT (`DEMO-01 · …`); el código sigue siendo `OT-2026-0001`. | `ck_ot_codigo` exige `OT-AAAA-NNNN`; la prueba I-04 lo demuestra. | — |
+| D9 | Seed de demo | UUID fijos para usuarios y `DEMO-01`, iguales a los de los documentos de ejemplo de MongoDB. Clave común de demo `kotoduo demo local 2026` (Argon2id, parámetros mínimos OWASP). | Historial coherente entre PostgreSQL y MongoDB; credenciales de prueba sin valor fuera del entorno local. | — |
+| D10 | Alerta reproducible | El seed deja la tela dry-fit en 70 m con un movimiento `AJUSTE`; terminar "Corte" en `DEMO-01` consume 36 m y abre la alerta automática (34 ≤ 40). | Paso 4 del guion de demo determinista, sin tocar el DDL de ES2. | — |
+| D11 | Datos de volumen | Script manual `volumen.sql`, determinista, con prefijo `VOL-` y sin responsable asignado. | No contamina "Mi Trabajo" ni la demo; se borra con un `DELETE`. | — |

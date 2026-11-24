@@ -1,0 +1,46 @@
+# E-06 · Integridad PostgreSQL: INSERT/UPDATE inválidos rechazados (criterio 3.1.2)
+# Fecha: 2026-11-24 13:33 -03 · rama: feat/f1-database · base: e013078 (cambios F1 sin commitear)
+# Comando: docker compose exec -T postgres sh -c 'psql -U sgp -d sgp_kotoduo -X -f /sgp/pruebas_integridad.sql 2>&1'
+
+SET
+--- Baseline before the attempts
+ ot_total | stock_tela | etapa4_demo01 
+----------+------------+---------------
+     5001 |      70.00 | PENDIENTE
+(1 row)
+
+--- I-01 NOT NULL: order without title (expected: not-null violation)
+psql:/sgp/pruebas_integridad.sql:23: ERROR:  null value in column "titulo" of relation "orden_trabajo" violates not-null constraint
+DETAIL:  Failing row contains (ebc99c02-2dd8-46d9-89a3-6e68301409a7, OT-2026-9001, 1, null, INTEGRIDAD, null, 1, {}, NORMAL, REGISTRADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:33:42.130777+00, 2026-11-24 16:33:42.130777+00, null).
+--- I-02 FOREIGN KEY: work type 999 does not exist (expected: foreign-key violation)
+psql:/sgp/pruebas_integridad.sql:27: ERROR:  insert or update on table "orden_trabajo" violates foreign key constraint "orden_trabajo_tipo_trabajo_id_fkey"
+DETAIL:  Key (tipo_trabajo_id)=(999) is not present in table "tipo_trabajo".
+--- I-03 CHECK state: order state outside the allowed list (expected: check violation)
+psql:/sgp/pruebas_integridad.sql:31: ERROR:  new row for relation "orden_trabajo" violates check constraint "orden_trabajo_estado_check"
+DETAIL:  Failing row contains (7dc5b384-e7d4-4119-8816-be3e3d240d7a, OT-2026-9003, 1, INTEGRIDAD-03, INTEGRIDAD, null, 1, {}, NORMAL, PAUSADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:33:42.131886+00, 2026-11-24 16:33:42.131886+00, null).
+--- I-04 CHECK code format: "DEMO-01" is not OT-AAAA-NNNN (expected: check violation ck_ot_codigo)
+psql:/sgp/pruebas_integridad.sql:35: ERROR:  new row for relation "orden_trabajo" violates check constraint "ck_ot_codigo"
+DETAIL:  Failing row contains (460bdf3c-ffe2-4d1d-acc3-10b1d4fdb83d, DEMO-01, 1, INTEGRIDAD-04, INTEGRIDAD, null, 1, {}, NORMAL, REGISTRADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:33:42.13211+00, 2026-11-24 16:33:42.13211+00, null).
+--- I-05 UNIQUE: duplicated order code OT-2026-0001 (expected: unique violation)
+psql:/sgp/pruebas_integridad.sql:39: ERROR:  duplicate key value violates unique constraint "orden_trabajo_codigo_key"
+DETAIL:  Key (codigo)=(OT-2026-0001) already exists.
+--- I-06 CHECK quantity: zero units (expected: check violation)
+psql:/sgp/pruebas_integridad.sql:43: ERROR:  new row for relation "orden_trabajo" violates check constraint "orden_trabajo_cantidad_check"
+DETAIL:  Failing row contains (4ed5eee5-a411-4601-8d2e-55498bb83778, OT-2026-9006, 1, INTEGRIDAD-06, INTEGRIDAD, null, 0, {}, NORMAL, REGISTRADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:33:42.1324+00, 2026-11-24 16:33:42.1324+00, null).
+--- I-07 CHECK stock: consumption larger than the stock (expected: check violation on stock_actual)
+psql:/sgp/pruebas_integridad.sql:49: ERROR:  new row for relation "insumo" violates check constraint "insumo_stock_actual_check"
+DETAIL:  Failing row contains (4, TEL-DRY-BL, Tela dry-fit blanca, METRO, -9929.00, 40.00, t, 2026-11-24 16:33:42.132645+00).
+CONTEXT:  SQL statement "UPDATE insumo
+       SET stock_actual = stock_actual + NEW.cantidad
+     WHERE id = NEW.insumo_id
+    RETURNING stock_actual, stock_minimo"
+PL/pgSQL function fn_aplicar_movimiento_insumo() line 6 at SQL statement
+--- I-08 State machine trigger: stage PENDIENTE -> TERMINADA skips steps (expected: transition rejected)
+psql:/sgp/pruebas_integridad.sql:54: ERROR:  Transición de etapa no permitida: PENDIENTE -> TERMINADA
+CONTEXT:  PL/pgSQL function fn_validar_transicion_etapa() line 23 at RAISE
+--- Verification after the attempts: nothing was stored or changed
+ ot_total | ot_invalidas_guardadas | movimientos_invalidos | stock_tela | etapa4_demo01 
+----------+------------------------+-----------------------+------------+---------------
+     5001 |                      0 |                     0 |      70.00 | PENDIENTE
+(1 row)
+

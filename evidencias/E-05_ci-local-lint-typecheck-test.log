@@ -1,0 +1,33 @@
+
+> lint
+> npm run lint --workspaces --if-present
+
+
+> lint
+> eslint .
+
+
+> typecheck
+> npm run typecheck --workspaces --if-present
+
+
+> typecheck
+> tsc --noEmit
+
+
+> test
+> npm run test --workspaces --if-present
+
+
+> test
+> vitest run
+
+
+ RUN  v5.1.1 <repo>/api
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  13:28:05
+   Duration  193ms (import 64%, tests 21%, transform 12%, worker 3%)
+

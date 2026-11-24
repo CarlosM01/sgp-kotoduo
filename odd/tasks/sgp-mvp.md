@@ -21,7 +21,7 @@ The full specification is `docs/roadmap.md`. Numbered references:
 | ID | Specs | Route | Status | Evidence |
 |---|---|---|---|---|
 | T0 | S1 | inline | done (local part) | 048c7e4 · RED→GREEN 3 tests, lint/typecheck OK, compose: 16 tables + 3 collections |
-| T1 | S2 | inline | pending | — |
+| T1 | S2 | inline | done | commit "feat(db): add demo seed…" on `feat/f1-database` · clean `down -v`/`up`: 5 users, DEMO-01 (6 stages), Mongo event · volume 5000/30000 twice (idempotent) · E-06 8/8 rejected, E-07 4/4 rejected · D10 alert simulated (34 ≤ 40, rolled back) |
 | T2 | S3 | inline | pending | — |
 | T3 | S4 | inline | pending | — |
 | T4 | S5 | inline | pending | — |
@@ -36,4 +36,7 @@ Remote items outside the agent's reach (need the user): GitHub repo + push, GitH
 - L1 (2026-11-24): "Ayúdame a comenzar el desarrollo, analiza el roadmap"
 - L2: repo created at `Kotoduo/sgp-kotoduo`; DB scripts copied from `informe-2/bd` unchanged. `gh` CLI is not installed, so board/CI activation stays manual.
 - L3: `.env.example` write denied by user permission settings (`.env*` rule); user must create it (content proposed in chat). esbuild postinstall was blocked by npm install-scripts but vitest/tsx work.
-- Next: T1 (F1) seed — 5 users with argon2 hashes, 2 templates, supplies, DEMO-01; volume script; integrity evidence.
+- L4: public repo github.com/CarlosM01/sgp-kotoduo created and pushed; labels, milestones (v0.9, v1.0), issues #1–#16 (10 HU + 6 phases) and Project #6 "SGP-Kotoduo MVP" linked. F0 issue #11 closed with commit evidence. CI did not start: GitHub account locked by a billing issue (user must resolve in billing settings); local lint/typecheck/tests pass.
+- L5 (2026-11-24): "Cómo vamos con el roadmap, qué falta? Necesito que vayas sacando capturas de pantallas para evidencias cuando sea necesario." → E-01..E-05 captured (headless Chrome, public pages; Claude in Chrome not connected, Project #6 is private and was not captured). `.gitignore` now keeps `evidencias/**/*.log`.
+- L6 (2026-11-24): "Sí, empieza F1". Catalogs and 2 templates already come from 01_ddl.sql; added 02_seed.sql (users with Argon2id hashes generated with @node-rs/argon2 in a scratch dir, DEMO-01 = OT-2026-0001 because ck_ot_codigo rejects "DEMO-01", D8–D11), mongo_seed.js, volumen.sql, pruebas_integridad.sql/.js. Mongo `ix_actor_ts` covers the "fecha y usuario" index. Evidence E-06..E-08.
+- Next: T2 (F2) — API layers, zod, auth with Argon2id (same params as the seed), RBAC, hardening, Mongo audit log. Pending user: push branch, close issue #12, fix GitHub billing lock for CI.
