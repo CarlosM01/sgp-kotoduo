@@ -4,7 +4,8 @@
 -- Not part of the init seed: run on demand and remove before the demo.
 --
 --   run:    docker compose exec postgres psql -U sgp -d sgp_kotoduo -f /sgp/volumen.sql
---   remove: DELETE FROM sgp.orden_trabajo WHERE titulo LIKE 'VOL-%';   (stages cascade)
+--   remove: DELETE FROM sgp.orden_trabajo WHERE codigo ~ '^OT-2025-[0-9]{5}$' AND titulo LIKE 'VOL-%';
+--           (stages cascade; both conditions so a user-made order titled "VOL-…" is never touched)
 --
 -- Deterministic: same ids, codes and states on every run (re-running replaces the set).
 -- Volume rows are identifiable by the title prefix "VOL-" and codes OT-2025-NNNNN.
@@ -15,7 +16,7 @@
 BEGIN;
 SET search_path TO sgp;
 
-DELETE FROM orden_trabajo WHERE titulo LIKE 'VOL-%';
+DELETE FROM orden_trabajo WHERE codigo ~ '^OT-2025-[0-9]{5}$' AND titulo LIKE 'VOL-%';
 
 -- State mix per order n: 20 % finished, 10 % registered, 70 % in production
 -- with 0-4 finished stages. Due dates span 20 days in the past to 40 in the
@@ -67,6 +68,6 @@ COMMIT;
 ANALYZE sgp.orden_trabajo;
 ANALYZE sgp.etapa_orden;
 
-SELECT (SELECT count(*) FROM sgp.orden_trabajo WHERE titulo LIKE 'VOL-%')                 AS ot_volumen,
+SELECT (SELECT count(*) FROM sgp.orden_trabajo WHERE codigo ~ '^OT-2025-[0-9]{5}$' AND titulo LIKE 'VOL-%')                 AS ot_volumen,
        (SELECT count(*) FROM sgp.etapa_orden e JOIN sgp.orden_trabajo o ON o.id = e.orden_id
-         WHERE o.titulo LIKE 'VOL-%')                                                      AS etapas_volumen;
+         WHERE o.codigo ~ '^OT-2025-[0-9]{5}$' AND o.titulo LIKE 'VOL-%')                                                      AS etapas_volumen;

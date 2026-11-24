@@ -139,6 +139,7 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 - [ ] Validación de entrada con esquemas (zod), por ejemplo `NuevaOrdenSchema`, que rechace campos extra.
 - [ ] Manejo central de errores: respuestas uniformes, sin trazas internas hacia el cliente.
 - [ ] Autenticación: hash de contraseñas con argon2 o bcrypt, política de contraseñas (CP-07), JWT y refresh según D2.
+- [ ] Cambio de clave obligatorio: si `debe_cambiar_clave` es verdadero, el login solo permite `POST /auth/cambiar-clave` (aplica CP-07). El `admin` del seed parte así (D12).
 - [ ] Autorización RBAC **en el servidor**: middleware de permisos con `PERMISOS_POR_ROL` (CP-08) y control de propiedad de la etapa contra IDOR (CP-27).
 - [ ] Endurecimiento: límite de intentos y bloqueo de login (CP-29), `helmet`, CORS restringido, consultas parametrizadas (CP-24).
 - [ ] Bitácora: cada acción relevante escribe un evento en Mongo (HU-12).
@@ -268,6 +269,7 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 | POST | `/api/v1/auth/login` | Público | CP-07, CP-09, CP-29 |
 | POST | `/api/v1/auth/refresh` | Sesión (D2) | CP-26, CP-30 |
 | POST | `/api/v1/auth/logout` | Sesión | — |
+| POST | `/api/v1/auth/cambiar-clave` | Sesión (incluida la que debe cambiar clave) | CP-07 |
 | GET | `/api/v1/plantillas` | Vendedor, Encargada | — |
 | POST | `/api/v1/ordenes` | Vendedor, Encargada | CP-06, CP-11 |
 | GET | `/api/v1/ordenes`, `/ordenes/{id}` | Vendedor, Encargada, Admin | CP-24 |

@@ -1,46 +1,78 @@
 # E-06 · Integridad PostgreSQL: INSERT/UPDATE inválidos rechazados (criterio 3.1.2)
-# Fecha: 2026-11-24 13:33 -03 · rama: feat/f1-database · base: e013078 (cambios F1 sin commitear)
+# Fecha: 2026-11-24 13:40 -03 · rama: feat/f1-database · base: f562807 (correcciones de revisión sin commitear)
 # Comando: docker compose exec -T postgres sh -c 'psql -U sgp -d sgp_kotoduo -X -f /sgp/pruebas_integridad.sql 2>&1'
 
 SET
 --- Baseline before the attempts
- ot_total | stock_tela | etapa4_demo01 
-----------+------------+---------------
-     5001 |      70.00 | PENDIENTE
-(1 row)
+ot_total = 5001 · stock_tela = 70.00 · etapa4_demo01 = PENDIENTE
 
---- I-01 NOT NULL: order without title (expected: not-null violation)
-psql:/sgp/pruebas_integridad.sql:23: ERROR:  null value in column "titulo" of relation "orden_trabajo" violates not-null constraint
-DETAIL:  Failing row contains (ebc99c02-2dd8-46d9-89a3-6e68301409a7, OT-2026-9001, 1, null, INTEGRIDAD, null, 1, {}, NORMAL, REGISTRADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:33:42.130777+00, 2026-11-24 16:33:42.130777+00, null).
---- I-02 FOREIGN KEY: work type 999 does not exist (expected: foreign-key violation)
-psql:/sgp/pruebas_integridad.sql:27: ERROR:  insert or update on table "orden_trabajo" violates foreign key constraint "orden_trabajo_tipo_trabajo_id_fkey"
+--- I-01 NOT NULL: order without title (expected SQLSTATE 23502)
+BEGIN
+psql:/sgp/pruebas_integridad.sql:36: ERROR:  null value in column "titulo" of relation "orden_trabajo" violates not-null constraint
+DETAIL:  Failing row contains (43ab6179-0b8d-47e9-b4b8-9fb8e616debd, OT-2026-9001, 1, null, INTEGRIDAD, null, 1, {}, NORMAL, REGISTRADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:40:18.18804+00, 2026-11-24 16:40:18.18804+00, null).
+ROLLBACK
+OK I-01 rechazado, SQLSTATE 23502
+
+--- I-02 FOREIGN KEY: work type 999 does not exist (expected SQLSTATE 23503)
+BEGIN
+psql:/sgp/pruebas_integridad.sql:52: ERROR:  insert or update on table "orden_trabajo" violates foreign key constraint "orden_trabajo_tipo_trabajo_id_fkey"
 DETAIL:  Key (tipo_trabajo_id)=(999) is not present in table "tipo_trabajo".
---- I-03 CHECK state: order state outside the allowed list (expected: check violation)
-psql:/sgp/pruebas_integridad.sql:31: ERROR:  new row for relation "orden_trabajo" violates check constraint "orden_trabajo_estado_check"
-DETAIL:  Failing row contains (7dc5b384-e7d4-4119-8816-be3e3d240d7a, OT-2026-9003, 1, INTEGRIDAD-03, INTEGRIDAD, null, 1, {}, NORMAL, PAUSADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:33:42.131886+00, 2026-11-24 16:33:42.131886+00, null).
---- I-04 CHECK code format: "DEMO-01" is not OT-AAAA-NNNN (expected: check violation ck_ot_codigo)
-psql:/sgp/pruebas_integridad.sql:35: ERROR:  new row for relation "orden_trabajo" violates check constraint "ck_ot_codigo"
-DETAIL:  Failing row contains (460bdf3c-ffe2-4d1d-acc3-10b1d4fdb83d, DEMO-01, 1, INTEGRIDAD-04, INTEGRIDAD, null, 1, {}, NORMAL, REGISTRADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:33:42.13211+00, 2026-11-24 16:33:42.13211+00, null).
---- I-05 UNIQUE: duplicated order code OT-2026-0001 (expected: unique violation)
-psql:/sgp/pruebas_integridad.sql:39: ERROR:  duplicate key value violates unique constraint "orden_trabajo_codigo_key"
+ROLLBACK
+OK I-02 rechazado, SQLSTATE 23503
+
+--- I-03 CHECK state: order state outside the allowed list (expected SQLSTATE 23514)
+BEGIN
+psql:/sgp/pruebas_integridad.sql:68: ERROR:  new row for relation "orden_trabajo" violates check constraint "orden_trabajo_estado_check"
+DETAIL:  Failing row contains (55a17ec6-1e3c-441b-91ea-176468a06cf4, OT-2026-9003, 1, INTEGRIDAD-03, INTEGRIDAD, null, 1, {}, NORMAL, PAUSADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:40:18.190358+00, 2026-11-24 16:40:18.190358+00, null).
+ROLLBACK
+OK I-03 rechazado, SQLSTATE 23514
+
+--- I-04 CHECK code format: "DEMO-01" is not OT-AAAA-NNNN (expected SQLSTATE 23514, ck_ot_codigo)
+BEGIN
+psql:/sgp/pruebas_integridad.sql:84: ERROR:  new row for relation "orden_trabajo" violates check constraint "ck_ot_codigo"
+DETAIL:  Failing row contains (75dcd445-777a-4909-a6a2-5c2753f3b6a5, DEMO-01, 1, INTEGRIDAD-04, INTEGRIDAD, null, 1, {}, NORMAL, REGISTRADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:40:18.191022+00, 2026-11-24 16:40:18.191022+00, null).
+ROLLBACK
+OK I-04 rechazado, SQLSTATE 23514
+
+--- I-05 UNIQUE: duplicated order code OT-2026-0001 (expected SQLSTATE 23505)
+BEGIN
+psql:/sgp/pruebas_integridad.sql:100: ERROR:  duplicate key value violates unique constraint "orden_trabajo_codigo_key"
 DETAIL:  Key (codigo)=(OT-2026-0001) already exists.
---- I-06 CHECK quantity: zero units (expected: check violation)
-psql:/sgp/pruebas_integridad.sql:43: ERROR:  new row for relation "orden_trabajo" violates check constraint "orden_trabajo_cantidad_check"
-DETAIL:  Failing row contains (4ed5eee5-a411-4601-8d2e-55498bb83778, OT-2026-9006, 1, INTEGRIDAD-06, INTEGRIDAD, null, 0, {}, NORMAL, REGISTRADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:33:42.1324+00, 2026-11-24 16:33:42.1324+00, null).
---- I-07 CHECK stock: consumption larger than the stock (expected: check violation on stock_actual)
-psql:/sgp/pruebas_integridad.sql:49: ERROR:  new row for relation "insumo" violates check constraint "insumo_stock_actual_check"
-DETAIL:  Failing row contains (4, TEL-DRY-BL, Tela dry-fit blanca, METRO, -9929.00, 40.00, t, 2026-11-24 16:33:42.132645+00).
+ROLLBACK
+OK I-05 rechazado, SQLSTATE 23505
+
+--- I-06 CHECK quantity: zero units (expected SQLSTATE 23514)
+BEGIN
+psql:/sgp/pruebas_integridad.sql:116: ERROR:  new row for relation "orden_trabajo" violates check constraint "orden_trabajo_cantidad_check"
+DETAIL:  Failing row contains (4d383178-1d92-4777-afda-6025af0f1e03, OT-2026-9006, 1, INTEGRIDAD-06, INTEGRIDAD, null, 0, {}, NORMAL, REGISTRADA, 2026-11-24, null, 00000000-0000-0000-0000-000000000003, 2026-11-24 16:40:18.192229+00, 2026-11-24 16:40:18.192229+00, null).
+ROLLBACK
+OK I-06 rechazado, SQLSTATE 23514
+
+--- I-07 CHECK stock: consumption larger than the stock (expected SQLSTATE 23514 on stock_actual)
+BEGIN
+psql:/sgp/pruebas_integridad.sql:134: ERROR:  new row for relation "insumo" violates check constraint "insumo_stock_actual_check"
+DETAIL:  Failing row contains (4, TEL-DRY-BL, Tela dry-fit blanca, METRO, -9929.00, 40.00, t, 2026-11-24 16:40:18.192729+00).
 CONTEXT:  SQL statement "UPDATE insumo
        SET stock_actual = stock_actual + NEW.cantidad
      WHERE id = NEW.insumo_id
     RETURNING stock_actual, stock_minimo"
 PL/pgSQL function fn_aplicar_movimiento_insumo() line 6 at SQL statement
---- I-08 State machine trigger: stage PENDIENTE -> TERMINADA skips steps (expected: transition rejected)
-psql:/sgp/pruebas_integridad.sql:54: ERROR:  Transición de etapa no permitida: PENDIENTE -> TERMINADA
+ROLLBACK
+OK I-07 rechazado, SQLSTATE 23514
+
+--- I-08 State machine trigger: stage PENDIENTE -> TERMINADA skips steps (expected SQLSTATE 23514)
+BEGIN
+psql:/sgp/pruebas_integridad.sql:151: ERROR:  Transición de etapa no permitida: PENDIENTE -> TERMINADA
 CONTEXT:  PL/pgSQL function fn_validar_transicion_etapa() line 23 at RAISE
---- Verification after the attempts: nothing was stored or changed
+ROLLBACK
+OK I-08 rechazado, SQLSTATE 23514
+
+--- Verification after the attempts: state must equal the baseline
  ot_total | ot_invalidas_guardadas | movimientos_invalidos | stock_tela | etapa4_demo01 
 ----------+------------------------+-----------------------+------------+---------------
      5001 |                      0 |                     0 |      70.00 | PENDIENTE
 (1 row)
 
+OK estado final igual al baseline
+RESULTADO: 8/8 rechazados, sin cambios en los datos
+# exit=0

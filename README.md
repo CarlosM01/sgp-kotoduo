@@ -41,6 +41,6 @@ docker compose exec -T postgres sh -c 'psql -U sgp -d sgp_kotoduo -X -f /sgp/pru
 docker compose exec -T mongo mongosh --quiet sgp_docs --file /bd/pruebas_integridad.js
 ```
 
-Para quitar el volumen antes de la demo: `DELETE FROM sgp.orden_trabajo WHERE titulo LIKE 'VOL-%';`
+Para quitar el volumen antes de la demo: `DELETE FROM sgp.orden_trabajo WHERE codigo ~ '^OT-2025-[0-9]{5}$' AND titulo LIKE 'VOL-%';`
 
-**Usuarios de demo** (datos de prueba locales): `admin`, `encargada`, `vendedor`, `disenador`, `operario`. Todos con la frase de acceso `kotoduo demo local 2026`. La OT de ejemplo es `OT-2026-0001`, con el título `DEMO-01 · …`.
+**Usuarios de demo** (datos de prueba locales): `admin`, `encargada`, `vendedor`, `disenador`, `operario`. Todos con la frase de acceso `kotoduo demo local 2026`. El `admin` debe cambiarla en su primer inicio de sesión (D12). La OT de ejemplo es `OT-2026-0001`, con el título `DEMO-01 · …`.

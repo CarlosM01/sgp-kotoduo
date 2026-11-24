@@ -8,6 +8,8 @@
 -- Demo credentials (local test data only, never reuse elsewhere):
 --   users:    admin · encargada · vendedor · disenador · operario
 --   password: "kotoduo demo local 2026"  (passphrase, >= 12 chars, CP-07)
+-- admin starts with debe_cambiar_clave = TRUE: the first login must set a new
+-- password (POST /api/v1/auth/cambiar-clave, F2) before using the system.
 -- Hashes: Argon2id, OWASP minimum parameters (m=19456 KiB, t=2, p=1), one salt per user.
 --
 -- Fixed UUIDs keep PostgreSQL and the MongoDB sample documents consistent
@@ -22,7 +24,7 @@ SET search_path TO sgp;
 -- ---------------------------------------------------------------------
 INSERT INTO usuario (id, nombre_usuario, nombre_completo, correo, password_hash, debe_cambiar_clave, area_id) VALUES
  ('00000000-0000-0000-0000-000000000001', 'admin',     'Administrador Demo', 'admin@kotoduo.test',
-  '$argon2id$v=19$m=19456,t=2,p=1$VUUHD1RJLA26+juOZ70r5A$x17gbGV2+Zyr6IE246xUpgmloOPbBnq7jfguD50LcO4', FALSE, NULL),
+  '$argon2id$v=19$m=19456,t=2,p=1$VUUHD1RJLA26+juOZ70r5A$x17gbGV2+Zyr6IE246xUpgmloOPbBnq7jfguD50LcO4', TRUE, NULL),   -- privileged: must change the public demo password
  ('00000000-0000-0000-0000-000000000002', 'operario',  'Operario Demo',      NULL,
   '$argon2id$v=19$m=19456,t=2,p=1$v1KSMp19ORZH0kpqf6Q3qA$1skTDb6CK+oDp2MsdcQmGrSV41jkpANek1QHxBUqJtA', FALSE,
   (SELECT id FROM area WHERE nombre = 'Sublimación')),
