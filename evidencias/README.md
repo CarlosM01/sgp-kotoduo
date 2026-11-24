@@ -12,3 +12,7 @@
 | E-08 | `E-08_volumen-5000-ot.log` | Carga de 5.000 OT y 30.000 etapas | F1, CP-23 |
 | E-09 | `E-09_issue-12-f1-cerrado.png` | Issue #12 (F1) cerrado con el resumen, los commits y los enlaces a las evidencias | F1, 3.1.3.6 |
 | E-10 | `E-10_pr-17-f1.png` | PR #17 de F1 hacia `main`: resumen, verificación, revisión y vínculo con el issue #12 | F1, 3.1.3.6 |
+
+## Ejecuciones de verificación
+
+`ejecuciones/` guarda los logs de `npm run verify` (lint, typecheck y tests), uno por ejecución: `verify_<fecha>_<hora>_<commit>.log`. Desde E-04 el proyecto dejó de usar CI en GitHub Actions; la verificación se ejecuta en local y estos logs son su evidencia (3.1.5.10). No se borran logs con fallos: si una corrección arregla un fallo, se agrega una nueva ejecución.

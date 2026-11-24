@@ -116,7 +116,7 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 - [ ] Crear un tablero (GitHub Projects) con una tarjeta por HU del MVP. Evidencia para 3.1.3.6.
 - [ ] Definir los IDs estables: HU, CU, CP, `DEF-xx` (defectos), `E-xx` (evidencias).
 - [ ] Cerrar las decisiones D1–D4 y completar los supuestos de §3.
-- [ ] CI mínimo (GitHub Actions): lint + typecheck + tests unitarios.
+- [x] Verificación local por terminal (`npm run verify`): lint + typecheck + tests, con log fechado en `evidencias/ejecuciones/`. Reemplaza el CI de GitHub Actions, que la rúbrica no exige.
 - [ ] `.env.example` con valores ficticios. Ningún secreto real en el repositorio.
 - [ ] Consultar al docente cómo se evalúa 3.1.3.6 (colaboración) en un proyecto individual.
 

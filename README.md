@@ -16,11 +16,23 @@ Sistema de Gestión y Seguimiento Productivo para Kotoduo (MVP, Evaluación Suma
 cp .env.example .env          # valores locales ficticios
 docker compose up -d          # PostgreSQL + MongoDB con esquema
 npm install
-npm test                      # lint, typecheck y tests: npm run lint / npm run typecheck
+npm run verify                # lint, typecheck y tests, con log en evidencias/ejecuciones/
 npm run dev -w api            # API en http://localhost:3000/api/v1/health
 ```
 
 La guía de instalación completa se escribe en F6.
+
+## Verificación
+
+El proyecto no usa CI remoto: la verificación se ejecuta en local desde la terminal.
+
+```bash
+npm run verify
+```
+
+Corre `npm run lint`, `npm run typecheck` y `npm test` en ese orden, aunque uno falle, y guarda toda la salida en `evidencias/ejecuciones/verify_<fecha>_<hora>_<commit>.log`. El log registra fecha, rama, commit, si había cambios sin confirmar, versión de Node y sistema operativo, y termina con un resumen PASS/FAIL por paso. El comando sale con código distinto de 0 si algún paso falla. Cada log se puede citar como evidencia de ejecución en el informe.
+
+Los pasos también se pueden correr por separado: `npm run lint`, `npm run typecheck`, `npm test`.
 
 ## Base de datos y datos de demo
 
