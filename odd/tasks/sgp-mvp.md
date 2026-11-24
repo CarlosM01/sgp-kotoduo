@@ -20,7 +20,7 @@ The full specification is `docs/roadmap.md`. Numbered references:
 
 | ID | Specs | Route | Status | Evidence |
 |---|---|---|---|---|
-| T0 | S1 | inline | in progress | — |
+| T0 | S1 | inline | done (local part) | 048c7e4 · RED→GREEN 3 tests, lint/typecheck OK, compose: 16 tables + 3 collections |
 | T1 | S2 | inline | pending | — |
 | T2 | S3 | inline | pending | — |
 | T3 | S4 | inline | pending | — |
@@ -35,3 +35,5 @@ Remote items outside the agent's reach (need the user): GitHub repo + push, GitH
 
 - L1 (2026-11-24): "Ayúdame a comenzar el desarrollo, analiza el roadmap"
 - L2: repo created at `Kotoduo/sgp-kotoduo`; DB scripts copied from `informe-2/bd` unchanged. `gh` CLI is not installed, so board/CI activation stays manual.
+- L3: `.env.example` write denied by user permission settings (`.env*` rule); user must create it (content proposed in chat). esbuild postinstall was blocked by npm install-scripts but vitest/tsx work.
+- Next: T1 (F1) seed — 5 users with argon2 hashes, 2 templates, supplies, DEMO-01; volume script; integrity evidence.
