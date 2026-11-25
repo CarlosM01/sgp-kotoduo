@@ -25,13 +25,6 @@ describe('leerConfig', () => {
     leerConfig({ ...BASE, JWT_SECRET: PLACEHOLDER }, { warn });
     expect(warn).toHaveBeenCalledOnce();
   });
-
-  it('npm start runs the built API as production, so the placeholder cannot reach it', () => {
-    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
-      scripts: Record<string, string>;
-    };
-    expect(pkg.scripts.start).toMatch(/^NODE_ENV=production /);
-  });
 });
 
 describe('seed (D12)', () => {

@@ -17,6 +17,15 @@ describe('PostgreSQL pool resilience', () => {
     const { rows } = await pool.query<{ pid: number }>('SELECT pg_backend_pid() AS pid');
     const pid = rows[0]?.pid;
     const antes = pool.totalCount;
+    // 'remove' fires when the pool discards the dead client; it is not an 'error'
+    // listener, so only the API's own listener keeps the error from crashing the process.
+    const descartado = new Promise<void>((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('the pool did not discard the client in 10 s')), 10_000);
+      pool.once('remove', () => {
+        clearTimeout(t);
+        resolve();
+      });
+    });
 
     // A separate session terminates the idle backend, as a DB restart or admin would.
     const otro = new pg.Client({ connectionString: process.env.DATABASE_URL });
@@ -26,10 +35,7 @@ describe('PostgreSQL pool resilience', () => {
     } finally {
       await otro.end();
     }
-    // The test adds no 'error' listener of its own: only the API's listener can
-    // keep the emitted error from crashing the process. Wait for the pool to
-    // discard the dead client.
-    for (let i = 0; i < 50 && pool.totalCount >= antes; i++) await new Promise((r) => setTimeout(r, 20));
+    await descartado;
     expect(pool.totalCount).toBeLessThan(antes);
 
     const despues = await pool.query<{ ok: number }>('SELECT 1 AS ok');
