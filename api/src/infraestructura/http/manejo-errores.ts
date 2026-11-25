@@ -24,6 +24,9 @@ const RESPUESTAS_BODY_PARSER: Record<string, { status: number; code: string; mes
 
 // PostgreSQL integrity violations: CHECK, FOREIGN KEY, UNIQUE, NOT NULL.
 const CODIGOS_INTEGRIDAD_PG = new Set(['23514', '23503', '23505', '23502']);
+// PostgreSQL rejected the value itself (NUL byte, invalid text for the type): defense in depth
+// for inputs a schema let through.
+const CODIGOS_DATO_INVALIDO_PG = new Set(['22021', '22P02']);
 
 function campo(err: unknown, nombre: string): unknown {
   return typeof err === 'object' && err !== null ? (err as Record<string, unknown>)[nombre] : undefined;
@@ -48,6 +51,12 @@ export function crearManejadorErrores(log: Pick<Console, 'error' | 'warn'> = con
     }
 
     const pgCode = campo(err, 'code');
+    if (typeof pgCode === 'string' && CODIGOS_DATO_INVALIDO_PG.has(pgCode)) {
+      log.warn({ msg: 'invalid value rejected by the database', requestId, pgCode });
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Los datos enviados no son válidos' } });
+      return;
+    }
+
     if (typeof pgCode === 'string' && CODIGOS_INTEGRIDAD_PG.has(pgCode)) {
       log.warn({ msg: 'integrity violation', requestId, pgCode });
       res.status(409).json({ error: { code: 'CONFLICT', message: 'La operación no es válida en el estado actual' } });

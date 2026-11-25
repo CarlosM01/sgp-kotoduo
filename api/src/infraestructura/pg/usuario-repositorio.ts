@@ -11,14 +11,12 @@ interface FilaUsuario {
   password_hash: string;
   activo: boolean;
   debe_cambiar_clave: boolean;
-  bloqueado: boolean;
   roles: string[];
 }
 
 const SELECT_USUARIO = `
   SELECT u.id, u.nombre_usuario, u.nombre_completo, u.password_hash, u.activo,
          u.debe_cambiar_clave,
-         COALESCE(u.bloqueado_hasta > now(), FALSE) AS bloqueado,
          COALESCE(array_agg(r.codigo ORDER BY r.codigo) FILTER (WHERE r.codigo IS NOT NULL), '{}') AS roles
     FROM sgp.usuario u
     LEFT JOIN sgp.usuario_rol ur ON ur.usuario_id = u.id
@@ -32,7 +30,6 @@ function aUsuario(f: FilaUsuario): UsuarioAuth {
     passwordHash: f.password_hash,
     activo: f.activo,
     debeCambiarClave: f.debe_cambiar_clave,
-    bloqueado: f.bloqueado,
     roles: f.roles.filter(esCodigoRol),
   };
 }
@@ -52,16 +49,34 @@ export function crearUsuarioRepositorioPg(pool: Pool): UsuarioRepositorio {
       return rows[0] ? aUsuario(rows[0]) : null;
     },
 
-    async registrarIntentoFallido(id, maxIntentos, minutosBloqueo) {
-      // One UPDATE: the row lock serializes concurrent failures, so no attempt is lost.
-      // In SET, column references read the values before the update.
+    async reservarIntento(id, maxIntentos) {
+      // Counts the attempt before the password is checked. One UPDATE: the row
+      // lock serializes concurrent requests, so at most `maxIntentos` checks run
+      // per lock window. A count left at the maximum by a crashed request is
+      // treated as stale after one minute without changes.
+      const { rowCount } = await pool.query(
+        `UPDATE sgp.usuario
+            SET intentos_fallidos = CASE WHEN intentos_fallidos >= $2 THEN 1
+                                         ELSE intentos_fallidos + 1 END,
+                actualizado_en    = now()
+          WHERE id = $1
+            AND (bloqueado_hasta IS NULL OR bloqueado_hasta <= now())
+            AND (intentos_fallidos < $2 OR actualizado_en < now() - interval '1 minute')`,
+        [id, maxIntentos],
+      );
+      return rowCount === 1;
+    },
+
+    async registrarFallo(id, maxIntentos, minutosBloqueo) {
+      // The reserved attempt stays counted. In SET, column references read the
+      // values before the update.
       const { rows } = await pool.query<{ bloqueada: boolean }>(
         `UPDATE sgp.usuario
-            SET intentos_fallidos = CASE WHEN intentos_fallidos + 1 >= $2 THEN 0
-                                         ELSE intentos_fallidos + 1 END,
-                bloqueado_hasta   = CASE WHEN intentos_fallidos + 1 >= $2
+            SET bloqueado_hasta   = CASE WHEN intentos_fallidos >= $2
                                          THEN now() + make_interval(mins => $3::int)
                                          ELSE bloqueado_hasta END,
+                intentos_fallidos = CASE WHEN intentos_fallidos >= $2 THEN 0
+                                         ELSE intentos_fallidos END,
                 actualizado_en    = now()
           WHERE id = $1
             AND (bloqueado_hasta IS NULL OR bloqueado_hasta <= now())
@@ -72,12 +87,15 @@ export function crearUsuarioRepositorioPg(pool: Pool): UsuarioRepositorio {
     },
 
     async registrarAccesoExitoso(id) {
-      await pool.query(
+      // Conditional: a success that finishes after a concurrent lock does not clear it.
+      const { rowCount } = await pool.query(
         `UPDATE sgp.usuario
             SET intentos_fallidos = 0, bloqueado_hasta = NULL, ultimo_acceso = now()
-          WHERE id = $1`,
+          WHERE id = $1
+            AND (bloqueado_hasta IS NULL OR bloqueado_hasta <= now())`,
         [id],
       );
+      return rowCount === 1;
     },
 
     async actualizarClave(id, passwordHash) {

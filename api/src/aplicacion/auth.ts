@@ -29,6 +29,8 @@ interface Dependencias {
   auditoria: Auditoria;
 }
 
+type MotivoRechazo = 'USUARIO_DESCONOCIDO' | 'CUENTA_INACTIVA' | 'CUENTA_BLOQUEADA' | 'CLAVE_INCORRECTA';
+
 const MENSAJES_POLITICA = {
   MUY_CORTA: 'La contraseña debe tener al menos 12 caracteres',
   MUY_LARGA: 'La contraseña no puede superar los 128 caracteres',
@@ -52,17 +54,44 @@ export function crearServicioAuth({ usuarios, hasher, tokens, auditoria }: Depen
     };
   }
 
+  /**
+   * Checks a password under the lockout protocol (see UsuarioRepositorio).
+   * Returns null when it is correct, or why it was rejected. A wrong password
+   * stays counted and may lock the account.
+   */
+  async function comprobarClave(u: UsuarioAuth, clave: string, ctx: Contexto): Promise<MotivoRechazo | null> {
+    const reservado = await usuarios.reservarIntento(u.id, MAX_INTENTOS_LOGIN);
+    const valida = await hasher.verificar(reservado ? u.passwordHash : await obtenerHashFicticio(), clave);
+    if (!reservado) return 'CUENTA_BLOQUEADA';
+
+    if (valida) return (await usuarios.registrarAccesoExitoso(u.id)) ? null : 'CUENTA_BLOQUEADA';
+
+    const { bloqueada } = await usuarios.registrarFallo(u.id, MAX_INTENTOS_LOGIN, MINUTOS_BLOQUEO);
+    if (bloqueada) {
+      await auditoria.registrar({
+        tipo: 'CUENTA_BLOQUEADA',
+        agregado: { tipo: 'usuario', id: u.id },
+        actor: { usuarioId: u.id, roles: u.roles },
+        payload: { intentos: MAX_INTENTOS_LOGIN, minutos: MINUTOS_BLOQUEO },
+        contexto: ctx,
+      });
+    }
+    return 'CLAVE_INCORRECTA';
+  }
+
   return {
     async login(nombreUsuario, clave, ctx) {
       const u = await usuarios.buscarPorNombre(nombreUsuario);
-      const valida = await hasher.verificar(u?.passwordHash ?? (await obtenerHashFicticio()), clave);
 
-      if (!u || !u.activo || u.bloqueado || !valida) {
-        let motivo = 'CLAVE_INCORRECTA';
-        if (!u) motivo = 'USUARIO_DESCONOCIDO';
-        else if (!u.activo) motivo = 'CUENTA_INACTIVA';
-        else if (u.bloqueado) motivo = 'CUENTA_BLOQUEADA';
+      let motivo: MotivoRechazo | null;
+      if (u?.activo) {
+        motivo = await comprobarClave(u, clave, ctx);
+      } else {
+        await hasher.verificar(await obtenerHashFicticio(), clave);
+        motivo = u ? 'CUENTA_INACTIVA' : 'USUARIO_DESCONOCIDO';
+      }
 
+      if (!u || motivo !== null) {
         await auditoria.registrar({
           tipo: 'LOGIN_FALLIDO',
           agregado: { tipo: 'usuario', id: u?.id ?? 'desconocido' },
@@ -70,24 +99,9 @@ export function crearServicioAuth({ usuarios, hasher, tokens, auditoria }: Depen
           payload: { nombre_usuario: nombreUsuario, motivo },
           contexto: ctx,
         });
-
-        // Only a wrong password on an active, unlocked account counts toward the lock.
-        if (u && motivo === 'CLAVE_INCORRECTA') {
-          const { bloqueada } = await usuarios.registrarIntentoFallido(u.id, MAX_INTENTOS_LOGIN, MINUTOS_BLOQUEO);
-          if (bloqueada) {
-            await auditoria.registrar({
-              tipo: 'CUENTA_BLOQUEADA',
-              agregado: { tipo: 'usuario', id: u.id },
-              actor: { usuarioId: u.id, roles: u.roles },
-              payload: { intentos: MAX_INTENTOS_LOGIN, minutos: MINUTOS_BLOQUEO },
-              contexto: ctx,
-            });
-          }
-        }
         throw new ErrorCredenciales();
       }
 
-      await usuarios.registrarAccesoExitoso(u.id);
       await auditoria.registrar({
         tipo: 'LOGIN_EXITOSO',
         agregado: { tipo: 'usuario', id: u.id },
@@ -102,7 +116,8 @@ export function crearServicioAuth({ usuarios, hasher, tokens, auditoria }: Depen
       const u = await usuarios.buscarPorId(actor.id);
       if (!u || !u.activo) throw new ErrorNoAutenticado();
 
-      if (!(await hasher.verificar(u.passwordHash, claveActual))) {
+      // Guesses of the current password count toward the same lock as the login.
+      if ((await comprobarClave(u, claveActual, ctx)) !== null) {
         throw new ErrorValidacion('La contraseña actual no es correcta', [
           { campo: 'claveActual', problema: 'incorrecta' },
         ]);

@@ -16,8 +16,9 @@ export function repositorioEnMemoria(usuarios: UsuarioAuth[] = []): UsuarioRepos
   return {
     buscarPorNombre: async (n) => [...porId.values()].find((u) => u.nombreUsuario === n) ?? null,
     buscarPorId: async (id) => porId.get(id) ?? null,
-    registrarIntentoFallido: async () => ({ bloqueada: false }),
-    registrarAccesoExitoso: async () => {},
+    reservarIntento: async () => true,
+    registrarFallo: async () => ({ bloqueada: false }),
+    registrarAccesoExitoso: async () => true,
     actualizarClave: async (id, h) => {
       const u = porId.get(id);
       if (u) Object.assign(u, { passwordHash: h, debeCambiarClave: false });

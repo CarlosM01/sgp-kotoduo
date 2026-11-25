@@ -1,6 +1,8 @@
+import type { AddressInfo } from 'node:net';
 import { decodeJwt } from 'jose';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { crearUsuarioRepositorioPg } from '../../src/infraestructura/pg/usuario-repositorio.js';
 import { crearHasherArgon2 } from '../../src/infraestructura/seguridad/argon2.js';
 import { CLAVE_DEMO_SEED, prepararEntorno, type Entorno } from './apoyo.js';
 
@@ -110,6 +112,83 @@ describe('CP-29 fuerza bruta (AM-07)', () => {
     expect(await entorno.usuario(op.id)).toMatchObject({ intentos_fallidos: 0, bloqueado_hasta: null });
   });
 
+  // B1 (F2 verifier): concurrent requests must not verify more than 5
+  // passwords per lock window, and a late success must not clear the lock.
+  async function enParalelo(nombreUsuario: string, claves: string[]): Promise<number[]> {
+    const server = entorno.app({ authPorMinuto: 1_000, apiPorMinuto: 1_000 }).listen(0);
+    try {
+      const { port } = server.address() as AddressInfo;
+      return await Promise.all(
+        claves.map((clave) =>
+          fetch(`http://127.0.0.1:${port}/api/v1/auth/login`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ nombreUsuario, clave }),
+          }).then((r) => r.status),
+        ),
+      );
+    } finally {
+      server.close();
+    }
+  }
+
+  const claveRevisada = (e: { tipo: string; payload: Record<string, unknown> }) =>
+    e.tipo === 'LOGIN_EXITOSO' || (e.tipo === 'LOGIN_FALLIDO' && e.payload.motivo === 'CLAVE_INCORRECTA');
+
+  it('10 concurrent wrong passwords: at most 5 are checked, the account locks and stays locked', async () => {
+    for (let ronda = 1; ronda <= 3; ronda++) {
+      const op = await entorno.crearUsuario('OPERARIO');
+
+      const estados = await enParalelo(op.nombreUsuario, Array.from({ length: 10 }, (_, i) => `clave equivocada ${i}`));
+
+      expect(estados).toEqual(Array(10).fill(401));
+      expect((await entorno.eventosDe(op.id)).filter(claveRevisada).length).toBeLessThanOrEqual(5);
+      expect((await entorno.usuario(op.id)).bloqueado_hasta?.getTime()).toBeGreaterThan(Date.now());
+      expect((await login(entorno.app(), op.nombreUsuario, op.clave)).status).toBe(401);
+    }
+  });
+
+  it('9 wrong + 1 right in parallel never checks more than 5 passwords', async () => {
+    for (let ronda = 1; ronda <= 3; ronda++) {
+      const op = await entorno.crearUsuario('OPERARIO');
+      const claves = Array.from({ length: 9 }, (_, i) => `clave equivocada ${i}`);
+      claves.splice(ronda * 3, 0, op.clave);
+
+      await enParalelo(op.nombreUsuario, claves);
+
+      expect((await entorno.eventosDe(op.id)).filter(claveRevisada).length).toBeLessThanOrEqual(5);
+    }
+  });
+
+  it('a successful login does not clear an active lock', async () => {
+    const op = await entorno.crearUsuario('OPERARIO');
+    await entorno.contenedor.pool.query(
+      `UPDATE sgp.usuario SET bloqueado_hasta = now() + interval '15 minutes' WHERE id = $1`,
+      [op.id],
+    );
+    const repo = crearUsuarioRepositorioPg(entorno.contenedor.pool);
+
+    expect(await repo.registrarAccesoExitoso(op.id)).toBe(false);
+    expect((await entorno.usuario(op.id)).bloqueado_hasta?.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it('wrong current passwords in cambiar-clave also count toward the lock', async () => {
+    const op = await entorno.crearUsuario('OPERARIO');
+    const app = entorno.app();
+    const { accessToken } = (await login(app, op.nombreUsuario, op.clave)).body;
+
+    for (let i = 1; i <= 5; i++) {
+      const res = await request(app)
+        .post('/api/v1/auth/cambiar-clave')
+        .auth(accessToken, { type: 'bearer' })
+        .send({ claveActual: `clave equivocada ${i}`, claveNueva: 'nueva clave del operario 2026' });
+      expect(res.status).toBe(400);
+    }
+
+    expect((await entorno.usuario(op.id)).bloqueado_hasta?.getTime()).toBeGreaterThan(Date.now());
+    expect((await login(app, op.nombreUsuario, op.clave)).status).toBe(401);
+  });
+
   it('the 11th auth request in 60 s from the same IP receives 429', async () => {
     const app = entorno.app({ authPorMinuto: 10 });
     const estados: number[] = [];
@@ -125,6 +204,8 @@ describe('D12 forced password change', () => {
   it('the seed admin starts with debeCambiarClave and cannot use the API until it changes it', async () => {
     const app = entorno.app();
     const res = await login(app, 'admin', CLAVE_DEMO_SEED);
+    // Only the audit event of this request is removed afterwards, never real admin events.
+    entorno.borrarEventosDeRequest(res.headers['x-request-id'] as string);
 
     expect(res.status).toBe(200);
     expect(res.body.debeCambiarClave).toBe(true);

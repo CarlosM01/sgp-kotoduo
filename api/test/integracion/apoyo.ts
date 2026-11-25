@@ -10,7 +10,6 @@ import { crearHasherArgon2 } from '../../src/infraestructura/seguridad/argon2.js
 
 export const CLAVE_PRUEBA = 'tinta plotter azul 2026';
 export const CLAVE_DEMO_SEED = 'kotoduo demo local 2026';
-export const ADMIN_SEED_ID = '00000000-0000-0000-0000-000000000001';
 
 export interface UsuarioPrueba {
   id: string;
@@ -23,6 +22,8 @@ export interface Entorno {
   app(limites?: AppOptions['limites']): Express;
   crearUsuario(rol: CodigoRol, opciones?: { debeCambiarClave?: boolean }): Promise<UsuarioPrueba>;
   eventosDe(usuarioId: string): Promise<Array<{ tipo: string; payload: Record<string, unknown>; actor: { ip?: string } }>>;
+  /** Marks the audit event of one test request (by X-Request-Id) for removal. */
+  borrarEventosDeRequest(requestId: string): void;
   usuario(id: string): Promise<{ intentos_fallidos: number; bloqueado_hasta: Date | null; debe_cambiar_clave: boolean; password_hash: string }>;
   limpiar(): Promise<void>;
 }
@@ -33,6 +34,7 @@ export async function prepararEntorno(): Promise<Entorno> {
   const eventos = mongo.db().collection('bitacora_eventos');
   const hasher = crearHasherArgon2();
   const creados: string[] = [];
+  const requestIds: string[] = [];
   const inicio = new Date();
   const silencioso = { error: () => {}, warn: () => {} };
 
@@ -64,6 +66,10 @@ export async function prepararEntorno(): Promise<Entorno> {
       return docs.map((d) => ({ tipo: d.tipo as string, payload: d.payload as Record<string, unknown>, actor: d.actor as { ip?: string } }));
     },
 
+    borrarEventosDeRequest(requestId) {
+      requestIds.push(requestId);
+    },
+
     async usuario(id) {
       const { rows } = await pool.query(
         `SELECT intentos_fallidos, bloqueado_hasta, debe_cambiar_clave, password_hash FROM sgp.usuario WHERE id = $1`,
@@ -79,7 +85,7 @@ export async function prepararEntorno(): Promise<Entorno> {
           $or: [
             { 'actor.usuario_id': { $in: creados } },
             { 'payload.nombre_usuario': { $regex: '^t\\.' } },
-            { 'actor.usuario_id': ADMIN_SEED_ID },
+            { request_id: { $in: requestIds } },
           ],
         });
         await pool.query(`DELETE FROM sgp.usuario WHERE id = ANY($1::uuid[])`, [creados]);

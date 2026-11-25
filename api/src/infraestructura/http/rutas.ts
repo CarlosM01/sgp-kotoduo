@@ -9,7 +9,12 @@ import { parsear } from './validar.js';
 
 const LoginSchema = z
   .object({
-    nombreUsuario: z.string().trim().toLowerCase().min(1).max(40),
+    // Same format as ck_usuario_nombre_usuario: anything else is rejected before any query (CP-24).
+    nombreUsuario: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z0-9._-]{3,40}$/),
     clave: z.string().min(1).max(256),
   })
   .strict();

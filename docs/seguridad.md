@@ -48,12 +48,12 @@ Secuencia por solicitud protegida: token válido (401) → sin cambio de clave p
 | Política de contraseñas | ≥ 12 caracteres (puntos de código), ≤ 128, sin reglas de composición; lista local de claves comprometidas que incluye la clave pública de demo | CP-07 |
 | Almacenamiento de claves | Argon2id, m = 19 456 KiB, t = 2, p = 1 (mismos parámetros que el seed) | CP-09, D12 |
 | Login sin enumeración | Mismo 401 y mensaje si el usuario no existe, está inactivo, está bloqueado o la clave es incorrecta; siempre se verifica un hash (real o ficticio) | `auth.test.ts` |
-| Bloqueo por fuerza bruta | 5 fallos → bloqueo de 15 min en `usuario.bloqueado_hasta`, con un `UPDATE` atómico; evento `CUENTA_BLOQUEADA` | CP-29 |
+| Bloqueo por fuerza bruta | 5 fallos → bloqueo de 15 min en `usuario.bloqueado_hasta`; evento `CUENTA_BLOQUEADA`. El intento se reserva con un `UPDATE` atómico **antes** de verificar la clave, así que ni con solicitudes simultáneas se revisan más de 5 claves por bloqueo, y un acceso correcto que termina después de un bloqueo no lo levanta. Los intentos fallidos de la clave actual en `cambiar-clave` cuentan para el mismo bloqueo | CP-29 |
 | Límite de tasa | 10 solicitudes por minuto e IP en `/auth`, 300 en el resto de `/api/v1` (`express-rate-limit`) | CP-29 |
 | Token de acceso | JWT HS256 de 10 min con emisor, audiencia y roles; se rechazan firma ajena, `alg: none`, payload alterado, roles desconocidos y token vencido | `tokens-jwt.test.ts` |
 | Cambio de clave obligatorio (D12) | Con `debe_cambiar_clave`, el token solo sirve para `POST /auth/cambiar-clave` | `auth.test.ts` |
 | RBAC con denegación por defecto | `requierePermiso` en cada ruta protegida; roles desconocidos no otorgan nada | CP-08, CP-28 |
-| Validación de entrada | Esquemas zod `.strict()`: rechazan campos no declarados, tipos no primitivos (`{"$ne": null}`) y parámetros repetidos | CP-24 |
+| Validación de entrada | Esquemas zod `.strict()`: rechazan campos no declarados, tipos no primitivos (`{"$ne": null}`) y parámetros repetidos. El nombre de usuario debe cumplir el mismo formato que la base (`^[a-z0-9._-]{3,40}$`); un valor que PostgreSQL rechace como dato inválido (por ejemplo, un byte NUL) responde 400, no 500 | CP-24 |
 | Consultas parametrizadas | Todo el SQL usa `$1…$n`; los filtros de MongoDB se arman solo con valores ya validados y `$eq` | CP-24 |
 | Errores sin fugas | Manejador central: errores tipados con `{ error: { code, message, details? } }`; los demás, 500 genérico. El detalle va al log del servidor con `X-Request-Id` | `app.test.ts`, CP-24 |
 | Cabeceras | Helmet: CSP `default-src 'none'`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy: no-referrer`, HSTS; sin `X-Powered-By` | `app.test.ts` |
@@ -70,3 +70,6 @@ Secuencia por solicitud protegida: token válido (401) → sin cambio de clave p
 | MFA para Administrador y Encargada | Fuera del MVP (§1.2) | Política de claves, bloqueo y cambio de clave obligatorio del `admin` |
 | WAF y HTTPS | Fuera del entorno local | Se describen en el plan de nube del Informe 3 |
 | Lista de claves comprometidas | Lista local corta | En producción, un corpus de claves filtradas |
+| Límite de tasa detrás de un proxy | `trust proxy` desactivado: correcto en local, pero detrás de Cloudflare todos los clientes compartirían el límite | Configurar `trust proxy` en el despliegue |
+| Tokens emitidos antes de un cambio de rol o una desactivación | Siguen vigentes hasta su vencimiento (10 min). §7.3 acepta ese plazo para roles, pero pide cerrar la sesión al desactivar | Se resuelve con la revocación de sesiones de D2; el MVP no tiene ruta para desactivar cuentas |
+| Nombre de usuario tecleado en `LOGIN_FALLIDO` | Se guarda para auditar intentos; si alguien escribe su clave en ese campo, queda en la bitácora | El formato del nombre (sin espacios, 3–40 caracteres) reduce el caso; la bitácora solo la lee el Administrador |

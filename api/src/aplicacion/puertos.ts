@@ -22,21 +22,26 @@ export interface UsuarioAuth {
   passwordHash: string;
   activo: boolean;
   debeCambiarClave: boolean;
-  /** True while bloqueado_hasta is in the future, evaluated by the database clock. */
-  bloqueado: boolean;
   roles: CodigoRol[];
 }
 
+/**
+ * Lockout protocol (CP-29), safe under concurrent requests:
+ * 1. `reservarIntento` counts the attempt BEFORE the password is checked and
+ *    refuses it while the account is locked or `maxIntentos` attempts are
+ *    already counted (failed or still in progress).
+ * 2. After the check, `registrarFallo` keeps the attempt counted and locks the
+ *    account when the count reached `maxIntentos`; `registrarAccesoExitoso`
+ *    releases the count, but only if the account was not locked meanwhile.
+ */
 export interface UsuarioRepositorio {
   buscarPorNombre(nombreUsuario: string): Promise<UsuarioAuth | null>;
   buscarPorId(id: string): Promise<UsuarioAuth | null>;
-  /**
-   * Counts a failed attempt atomically. When the count reaches `maxIntentos`
-   * the account is locked for `minutosBloqueo` and the counter restarts.
-   * Returns whether this attempt locked the account.
-   */
-  registrarIntentoFallido(id: string, maxIntentos: number, minutosBloqueo: number): Promise<{ bloqueada: boolean }>;
-  registrarAccesoExitoso(id: string): Promise<void>;
+  reservarIntento(id: string, maxIntentos: number): Promise<boolean>;
+  /** Returns whether this failure locked the account for `minutosBloqueo`. */
+  registrarFallo(id: string, maxIntentos: number, minutosBloqueo: number): Promise<{ bloqueada: boolean }>;
+  /** Returns false (and changes nothing) when the account is locked. */
+  registrarAccesoExitoso(id: string): Promise<boolean>;
   /** Stores the new hash and clears debe_cambiar_clave. */
   actualizarClave(id: string, passwordHash: string): Promise<void>;
 }

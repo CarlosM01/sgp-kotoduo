@@ -89,14 +89,17 @@ describe('CP-24 inyección SQL / NoSQL (AM-01, AM-02) — F2 routes', () => {
     expect(JSON.stringify(res.body)).not.toMatch(/\$ne|stack|at /);
   });
 
-  it('a SQL injection in the user name is just an unknown user (parameterized query)', async () => {
-    const res = await request(entorno.app())
-      .post('/api/v1/auth/login')
-      .send({ nombreUsuario: "' OR 1=1--", clave: 'cualquier cosa 123' });
+  it.each([["' OR 1=1--"], ['a\u0000b'], ['admin; DROP TABLE x']])(
+    'a user name outside the allowed format (%j) is rejected with 400 before any query',
+    async (nombreUsuario) => {
+      const res = await request(entorno.app())
+        .post('/api/v1/auth/login')
+        .send({ nombreUsuario, clave: 'cualquier cosa 123' });
 
-    expect(res.status).toBe(401);
-    expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
-  });
+      expect(res.status).toBe(400);
+      expect(res.body.error.details).toEqual([{ campo: 'nombreUsuario', problema: 'invalid_format' }]);
+    },
+  );
 
   it('undeclared fields are rejected (mass assignment)', async () => {
     const res = await request(entorno.app())
