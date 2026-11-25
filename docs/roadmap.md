@@ -148,12 +148,12 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ### F3 — Órdenes y etapas · flujos 2 y 3
 
-- [ ] Dominio: `generarEtapas` (CP-03), `calcularFechaEstimada` (CP-04) y la máquina de estados `puedeTransicionar` (CP-01, CP-02).
-- [ ] `POST /ordenes`: crea la OT con código `OT-AAAA-NNNN`, genera sus etapas y sus requerimientos de insumo en una sola transacción (CP-11).
-- [ ] Asignación mínima de responsables (HU-08 parcial).
-- [ ] `GET /mi-trabajo`: etapas del operario y siguiente actividad.
-- [ ] `POST /etapas/{id}/iniciar` y `/terminar` con bloqueo optimista por `version` (CP-12, CP-19). Terminar la última etapa cierra la OT (CP-13).
-- [ ] `GET /panel`: órdenes atrasadas y en riesgo (CP-18), sobre `v_panel_ordenes` paginada.
+- [x] Dominio: `generarEtapas` (CP-03), `calcularFechaEstimada` (CP-04) y la máquina de estados `puedeTransicionar` (CP-01, CP-02).
+- [x] `POST /ordenes`: crea la OT con código `OT-AAAA-NNNN`, genera sus etapas y sus requerimientos de insumo en una sola transacción (CP-11).
+- [x] Asignación mínima de responsables (HU-08 parcial).
+- [x] `GET /mi-trabajo`: etapas del operario y siguiente actividad.
+- [x] `POST /etapas/{id}/iniciar` y `/terminar` con bloqueo optimista por `version` (CP-12, CP-19). Terminar la última etapa cierra la OT (CP-13).
+- [x] `GET /panel`: órdenes atrasadas y en riesgo (CP-18), sobre `v_panel_ordenes` paginada.
 
 **Salida:** flujos 2 y 3 operativos vía API, con tests unitarios y de integración en verde.
 
@@ -178,7 +178,7 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ### F6 — Entorno y documentación · criterio 3.1.4
 
-- [ ] `docker-compose.yml` del stack completo: `postgres`, `mongo`, `api`, `web`.
+- [ ] `docker-compose.yml` del stack completo: `postgres`, `mongo`, `api`, `web`. El servicio `api` fija `NODE_ENV=production` (hallazgo R1-001 de la revisión de F3).
 - [ ] `README.md` de instalación: SO probado, versiones, comandos en orden, seed, verificación con `DEMO-01`, problemas conocidos.
 - [ ] Manual de usuario breve, por rol.
 - [ ] **Prueba desde un clon limpio**, idealmente hecha por un compañero. Registrar los pasos que generaron dudas, corregir y repetir (la guía 4.2 lo valora).

@@ -108,6 +108,33 @@ describe('HU-08 (partial): assigning the responsible person', () => {
   });
 });
 
+describe('HU-08: assignment is refused on closed stages and orders', () => {
+  it('a TERMINADA stage → 409 and nothing changes', async () => {
+    const { etapas } = await ordenAsignada(operarioA);
+    await completar(etapas[0]!.id, operarioA);
+    const antes = await etapaEnBd(etapas[0]!.id);
+
+    const res = await asignar(etapas[0]!.id, operarioB.id, antes.version);
+
+    expect(res.status).toBe(409);
+    expect(await etapaEnBd(etapas[0]!.id)).toEqual(antes);
+  });
+
+  // A TERMINADA order has every stage closed, so the stage check answers first;
+  // the order check is reached through a cancelled order with open stages.
+  it('an open stage of an ANULADA order → 409 and nothing changes', async () => {
+    const { ordenId, etapas } = await ordenAsignada(operarioA);
+    await pool().query(`UPDATE sgp.orden_trabajo SET estado = 'ANULADA' WHERE id = $1`, [ordenId]);
+    const antes = await etapaEnBd(etapas[1]!.id);
+
+    const res = await asignar(etapas[1]!.id, operarioB.id, antes.version);
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.message).toBe('La orden ya está cerrada');
+    expect(await etapaEnBd(etapas[1]!.id)).toEqual(antes);
+  });
+});
+
 describe('HU-01: Mi Trabajo', () => {
   it('lists only the stages of the operator and points to the next activity', async () => {
     const { etapas } = await ordenAsignada(operarioB, 1);
