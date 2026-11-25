@@ -12,6 +12,8 @@ const FILTRO_ESTADO = `($1::text = 'todas'
 export function crearInsumoRepositorioPg(pool: Pool): InsumoRepositorio {
   return {
     async listar() {
+      // No row cap: the catalogue of a small workshop has tens of supplies, and
+      // a silent cap would hide supplies from the Encargada (review R3-001).
       const { rows } = await pool.query<{
         id: number;
         codigo: string;
@@ -25,8 +27,7 @@ export function crearInsumoRepositorioPg(pool: Pool): InsumoRepositorio {
                 (SELECT COUNT(*)::int FROM sgp.alerta_insumo a WHERE a.insumo_id = i.id AND a.estado <> 'CERRADA') AS alertas
            FROM sgp.insumo i
           WHERE i.activo
-          ORDER BY (i.stock_actual <= i.stock_minimo) DESC, i.codigo
-          LIMIT 500`,
+          ORDER BY (i.stock_actual <= i.stock_minimo) DESC, i.codigo`,
       );
       return rows.map((f) => ({
         id: f.id,

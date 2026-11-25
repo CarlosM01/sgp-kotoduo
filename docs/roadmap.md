@@ -159,10 +159,10 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ### F4 — Insumos y alertas · flujo 4
 
-- [ ] Registrar consumos al terminar una etapa (`movimiento_insumo`).
-- [ ] Alerta automática **única** cuando el stock queda en el mínimo o bajo él (regla `≤`; CP-05, CP-14).
-- [ ] `POST /alertas`: reporte manual de faltante del operario (CP-15).
-- [ ] `GET /insumos` y `GET /alertas` para la Encargada.
+- [x] Registrar consumos al terminar una etapa (`movimiento_insumo`).
+- [x] Alerta automática **única** cuando el stock queda en el mínimo o bajo él (regla `≤`; CP-05, CP-14).
+- [x] `POST /alertas`: reporte manual de faltante del operario (CP-15).
+- [x] `GET /insumos` y `GET /alertas` para la Encargada.
 
 **Salida:** flujo 4 operativo vía API.
 

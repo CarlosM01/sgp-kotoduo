@@ -195,6 +195,34 @@ describe('D23: consumptions are limited to the supplies of the stage', () => {
     expect(await insumoEnBd(ajeno.id)).toEqual({ stock: 10, movimientos: 0, alertasAutoAbiertas: 0 });
   });
 
+  it('several supplies sent out of id order: answered in the order sent; an error points at the item as sent', async () => {
+    const ajeno = await entorno.crearInsumo(10, 1); // lowest id, not required by the stage
+    const x = await entorno.crearInsumo(10, 1);
+    const y = await entorno.crearInsumo(10, 1);
+    const [e1] = await ordenConInsumo(operarioA, x.id);
+    await pool().query(`INSERT INTO sgp.requerimiento_insumo (etapa_orden_id, insumo_id, cantidad_requerida) VALUES ($1, $2, 3)`, [e1!.id, y.id]);
+    const version = await iniciar(e1!.id, operarioA);
+
+    // Processed in id order (ajeno first), but reported at its position in the body.
+    const malo = await terminar(e1!.id, version, operarioA, [
+      { insumoId: x.id, cantidad: 1 },
+      { insumoId: ajeno.id, cantidad: 1 },
+    ]);
+    expect(malo.status).toBe(400);
+    expect(malo.body.error.details).toEqual([{ campo: 'consumos.1.insumoId', problema: 'not_required_by_stage' }]);
+    expect(await insumoEnBd(x.id)).toEqual({ stock: 10, movimientos: 0, alertasAutoAbiertas: 0 });
+
+    const res = await terminar(e1!.id, version, operarioA, [
+      { insumoId: y.id, cantidad: 2 },
+      { insumoId: x.id, cantidad: 1.5 },
+    ]);
+    expect(res.status).toBe(200);
+    expect(res.body.consumos.map((c: { insumoId: number; stockActual: number }) => [c.insumoId, c.stockActual])).toEqual([
+      [y.id, 8],
+      [x.id, 8.5],
+    ]);
+  });
+
   it('an invalid quantity → 400; finishing without consumptions leaves the stock as it was', async () => {
     const insumo = await entorno.crearInsumo(10, 1);
     const [e1] = await ordenConInsumo(operarioA, insumo.id);
@@ -303,6 +331,30 @@ describe('CP-15: manual shortage report (HU-03 / CU-09)', () => {
 
     const { rows: [r] } = await pool().query(`SELECT COUNT(*)::int AS n FROM sgp.alerta_insumo WHERE insumo_id = $1`, [insumo.id]);
     expect(r.n).toBe(0);
+  });
+
+  it('D24: DISPONIBLE and BLOQUEADA stages may report; a stage of an ANULADA order → 409', async () => {
+    const insumo = await entorno.crearInsumo(10, 1);
+    const cuerpo = (etapaId: string) => ({ insumoId: insumo.id, etapaId, comentario: 'Falta' });
+
+    // A new order is REGISTRADA with its first stage DISPONIBLE.
+    const [disponible] = await ordenConInsumo(operarioA, insumo.id);
+    expect((await etapaEnBd(disponible!.id)).estado).toBe('DISPONIBLE');
+    expect((await reportar(cuerpo(disponible!.id), operarioA)).status).toBe(201);
+
+    const [bloqueada] = await ordenConInsumo(operarioA, insumo.id);
+    await iniciar(bloqueada!.id, operarioA);
+    await pool().query(`UPDATE sgp.etapa_orden SET estado = 'BLOQUEADA', motivo_bloqueo = 'Prueba' WHERE id = $1`, [bloqueada!.id]);
+    expect((await reportar(cuerpo(bloqueada!.id), operarioA)).status).toBe(201);
+
+    const [anulada] = await ordenConInsumo(operarioA, insumo.id);
+    await pool().query(`UPDATE sgp.orden_trabajo SET estado = 'ANULADA' WHERE id = (SELECT orden_id FROM sgp.etapa_orden WHERE id = $1)`, [anulada!.id]);
+    const res = await reportar(cuerpo(anulada!.id), operarioA);
+    expect(res.status).toBe(409);
+    expect(res.body.error.message).toBe('La orden está ANULADA: no se puede reportar un faltante');
+
+    const { rows: [r] } = await pool().query(`SELECT COUNT(*)::int AS n FROM sgp.alerta_insumo WHERE insumo_id = $1`, [insumo.id]);
+    expect(r.n).toBe(2);
   });
 });
 
