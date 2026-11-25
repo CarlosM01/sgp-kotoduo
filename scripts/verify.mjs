@@ -50,9 +50,13 @@ function withoutForceColor(env) {
   return rest;
 }
 
+// Safety bound for same-second runs on the same commit (_2, _3, ...); it
+// only prevents an endless loop and is not a business rule.
+const MAX_LOG_NAME_ATTEMPTS = 99;
+
 // Opens a new log file without ever overwriting an earlier one.
 function openNewLog(baseName) {
-  for (let i = 1; i < 100; i++) {
+  for (let i = 1; i <= MAX_LOG_NAME_ATTEMPTS; i++) {
     const name = i === 1 ? `${baseName}.log` : `${baseName}_${i}.log`;
     const path = join(outDir, name);
     try {
@@ -61,7 +65,7 @@ function openNewLog(baseName) {
       if (err.code !== 'EEXIST') throw err;
     }
   }
-  throw new Error('too many logs with the same name');
+  throw new Error(`more than ${MAX_LOG_NAME_ATTEMPTS} logs with the same name`);
 }
 
 const now = new Date();
@@ -76,6 +80,7 @@ const dirty =
 
 let logFd = null;
 let logPath = null;
+let logIncomplete = false;
 try {
   mkdirSync(outDir, { recursive: true });
   ({ fd: logFd, path: logPath } = openNewLog(`verify_${stamp}_${commit ?? 'unknown'}`));
@@ -88,11 +93,42 @@ function write(text) {
   process.stdout.write(clean);
   if (logFd === null) return;
   try {
-    writeSync(logFd, clean);
+    // writeSync may write only part of the buffer (e.g. near a size limit);
+    // keep writing until all bytes are in or an error is thrown.
+    const bytes = Buffer.from(clean, 'utf8');
+    let offset = 0;
+    while (offset < bytes.length) {
+      offset += writeSync(logFd, bytes, offset, bytes.length - offset);
+    }
   } catch (err) {
     process.stderr.write(`WARNING: cannot write the log file (${err.message}); output goes to the terminal only.\n`);
+    try {
+      closeSync(logFd);
+    } catch {
+      // The descriptor is already unusable; nothing else to do.
+    }
     logFd = null;
+    logIncomplete = true;
   }
+}
+
+// Pipe chunks have arbitrary boundaries. Decoding as UTF-8 keeps multibyte
+// characters whole, and writing only complete lines keeps a path from being
+// split across two chunks, where redact() could not match it.
+function lineWriter(stream) {
+  let pending = '';
+  stream.setEncoding('utf8');
+  stream.on('data', (chunk) => {
+    pending += chunk;
+    const end = pending.lastIndexOf('\n');
+    if (end === -1) return;
+    write(pending.slice(0, end + 1));
+    pending = pending.slice(end + 1);
+  });
+  return () => {
+    if (pending) write(`${pending}\n`);
+    pending = '';
+  };
 }
 
 function runStep(step) {
@@ -101,12 +137,14 @@ function runStep(step) {
     let settled = false;
     // Node can emit 'error' and then 'close' for the same failed spawn;
     // only the first event writes the step trailer.
+    let flushOutput = () => {};
     const finish = (code, detail) => {
       if (settled) return;
       settled = true;
+      flushOutput();
       const seconds = ((Date.now() - started) / 1000).toFixed(1);
       write(`----- ${step.name}: ${detail} (${seconds}s) -----\n`);
-      resolve({ name: step.name, code, seconds });
+      resolve({ name: step.name, code, detail, seconds });
     };
     write(`\n===== ${step.name}: ${step.cmd} ${step.args.join(' ')} =====\n`);
     const child = spawn(step.cmd, step.args, {
@@ -114,8 +152,12 @@ function runStep(step) {
       shell: process.platform === 'win32',
       env: { ...withoutForceColor(process.env), NO_COLOR: '1' },
     });
-    child.stdout.on('data', (d) => write(d.toString()));
-    child.stderr.on('data', (d) => write(d.toString()));
+    const flushStdout = lineWriter(child.stdout);
+    const flushStderr = lineWriter(child.stderr);
+    flushOutput = () => {
+      flushStdout();
+      flushStderr();
+    };
     child.on('error', (err) => finish(-1, `failed to start (${err.message})`));
     child.on('close', (code, signal) =>
       finish(code ?? -1, signal ? `killed by ${signal}` : `exit ${code}`),
@@ -138,11 +180,19 @@ for (const step of steps) {
 
 write('\n===== Summary =====\n');
 for (const r of results) {
-  write(`${r.code === 0 ? 'PASS' : 'FAIL'}  ${r.name.padEnd(10)} exit ${r.code}  ${r.seconds}s\n`);
+  // detail keeps the real cause ("exit 1", "killed by SIGTERM", "failed to start ...").
+  write(`${r.code === 0 ? 'PASS' : 'FAIL'}  ${r.name.padEnd(10)} ${r.detail}  ${r.seconds}s\n`);
 }
 const failed = results.filter((r) => r.code !== 0).length;
 write(failed === 0 ? 'Result: all steps passed\n' : `Result: ${failed} step(s) failed\n`);
-write(logPath ? `Log: ${relative(root, logPath)}\n` : 'Log: not written\n');
+if (!logPath) {
+  write('Log: not written\n');
+} else if (logIncomplete) {
+  write(`Log: ${relative(root, logPath)} (INCOMPLETE: writing failed, do not cite it as evidence)\n`);
+} else {
+  write(`Log: ${relative(root, logPath)}\n`);
+}
 
 if (logFd !== null) closeSync(logFd);
-process.exit(failed === 0 ? 0 : 1);
+// exitCode instead of process.exit() so piped stdout (e.g. `| tee`) is flushed.
+process.exitCode = failed === 0 ? 0 : 1;
