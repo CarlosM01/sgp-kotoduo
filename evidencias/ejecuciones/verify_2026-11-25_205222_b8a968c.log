@@ -1,0 +1,80 @@
+SGP-Kotoduo - verification run
+Date:        2026-11-25 20:52:22 local (2026-11-25T23:52:22.625Z UTC)
+Branch:      feat/f4-insumos-alertas
+Commit:      b8a968c
+Dirty tree:  no
+Node:        v24.22.2
+OS:          Linux 7.0.0-43-generic (x64)
+
+===== lint: npm run lint =====
+
+> lint
+> npm run lint --workspaces --if-present
+
+
+> lint
+> eslint .
+
+----- lint: exit 0 (3.9s) -----
+
+===== typecheck: npm run typecheck =====
+
+> typecheck
+> npm run typecheck --workspaces --if-present
+
+
+> typecheck
+> tsc --noEmit
+
+----- typecheck: exit 0 (6.9s) -----
+
+===== test: npm test =====
+
+> test
+> npm run test --workspaces --if-present
+
+
+> test
+> vitest run
+
+
+ RUN  v5.1.1 <repo>/api
+
+
+ Test Files  12 passed (12)
+      Tests  199 passed (199)
+   Start at  20:52:34
+   Duration  1.28s (import 72%, tests 13%, transform 10%, worker 5%)
+
+----- test: exit 0 (2.2s) -----
+
+===== test:integracion: npm run test:integracion =====
+
+> test:integracion
+> npm run test:integracion --workspaces --if-present
+
+
+> test:integracion
+> vitest run -c vitest.integracion.config.ts
+
+
+ RUN  v5.1.1 <repo>/api
+
+
+ Test Files  7 passed (7)
+      Tests  93 passed (93)
+   Start at  20:52:36
+   Duration  18.89s (tests 80%, import 18%, transform 1%)
+
+    Isolate  7 workers spawned · ~164ms startup each (spawn + environment, per file)
+             at least ~982ms faster with isolate: false — reuses workers across files instead of one per file
+
+----- test:integracion: exit 0 (19.8s) -----
+
+===== Summary =====
+PASS  lint             exit 0  3.9s
+PASS  typecheck        exit 0  6.9s
+PASS  test             exit 0  2.2s
+PASS  test:integracion exit 0  19.8s
+Result: all steps passed
+Log: evidencias/ejecuciones/verify_2026-11-25_205222_b8a968c.log
