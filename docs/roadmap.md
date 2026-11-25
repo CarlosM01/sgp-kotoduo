@@ -112,24 +112,24 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ### F0 — Preparación y trazabilidad
 
-- [ ] Crear el repositorio `sgp-kotoduo` como monorepo: `api/`, `web/`, `db/`, `docs/`, `evidencias/`.
-- [ ] Crear un tablero (GitHub Projects) con una tarjeta por HU del MVP. Evidencia para 3.1.3.6.
-- [ ] Definir los IDs estables: HU, CU, CP, `DEF-xx` (defectos), `E-xx` (evidencias).
-- [ ] Cerrar las decisiones D1–D4 y completar los supuestos de §3.
+- [x] Crear el repositorio `sgp-kotoduo` como monorepo: `api/`, `web/`, `db/`, `docs/`, `evidencias/`.
+- [x] Crear un tablero (GitHub Projects) con una tarjeta por HU del MVP. Evidencia para 3.1.3.6.
+- [x] Definir los IDs estables: HU, CU, CP, `DEF-xx` (defectos), `E-xx` (evidencias).
+- [ ] Cerrar las decisiones D1–D4 y completar los supuestos de §3. _D1–D4 cerradas en `docs/decisiones.md`; faltan los supuestos 1, 5 y 12._
 - [x] Verificación local por terminal (`npm run verify`): lint + typecheck + tests, con log fechado en `evidencias/ejecuciones/`. Reemplaza el CI de GitHub Actions, que la rúbrica no exige.
-- [ ] `.env.example` con valores ficticios. Ningún secreto real en el repositorio.
+- [x] `.env.example` con valores ficticios. Ningún secreto real en el repositorio.
 - [ ] Consultar al docente cómo se evalúa 3.1.3.6 (colaboración) en un proyecto individual.
 
 **Salida:** repositorio con la estructura, tablero cargado y decisiones registradas en `docs/decisiones.md`.
 
 ### F1 — Base de datos · criterio 3.1.2
 
-- [ ] Reutilizar `ddl_postgresql.sql` (16 tablas). Las tablas fuera del MVP (`aprobacion_diseno`, `outbox_evento`) se conservan sin uso y se declara.
-- [ ] Revisar las restricciones que se van a probar: `NOT NULL`, `FOREIGN KEY`, `CHECK` de estados y de stock, `UNIQUE` del código de OT.
-- [ ] Seed reproducible: 5 usuarios (uno por rol), 2 plantillas, insumos con stock y mínimo, `DEMO-01` como OT de ejemplo.
-- [ ] Script de volumen: 5.000 OT y 30.000 etapas, para el `EXPLAIN ANALYZE` de CP-23.
-- [ ] Mongo: colección `bitacora_eventos` con validador de esquema e índice por fecha y usuario.
-- [ ] Prueba manual de integridad: `INSERT` inválidos (nulo, FK inexistente, estado fuera del `CHECK`) → captura del rechazo y consulta de que no quedó guardado.
+- [x] Reutilizar `ddl_postgresql.sql` (16 tablas). Las tablas fuera del MVP (`aprobacion_diseno`, `outbox_evento`) se conservan sin uso y se declara.
+- [x] Revisar las restricciones que se van a probar: `NOT NULL`, `FOREIGN KEY`, `CHECK` de estados y de stock, `UNIQUE` del código de OT.
+- [x] Seed reproducible: 5 usuarios (uno por rol), 2 plantillas, insumos con stock y mínimo, `DEMO-01` como OT de ejemplo.
+- [x] Script de volumen: 5.000 OT y 30.000 etapas, para el `EXPLAIN ANALYZE` de CP-23.
+- [x] Mongo: colección `bitacora_eventos` con validador de esquema e índice por fecha y usuario.
+- [x] Prueba manual de integridad: `INSERT` inválidos (nulo, FK inexistente, estado fuera del `CHECK`) → captura del rechazo y consulta de que no quedó guardado.
 
 **Salida:** `docker compose up` levanta ambas bases con esquema y seed. Evidencias de restricciones capturadas (E-xx).
 

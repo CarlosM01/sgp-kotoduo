@@ -15,14 +15,21 @@ export type Config = z.infer<typeof ConfigSchema>;
 
 const PLACEHOLDER_SECRET = 'replace_with_a_long_random_string';
 
-export function leerConfig(env: NodeJS.ProcessEnv = process.env): Config {
+export function leerConfig(
+  env: NodeJS.ProcessEnv = process.env,
+  log: Pick<Console, 'warn'> = console,
+): Config {
   const r = ConfigSchema.safeParse(env);
   if (!r.success) {
     const campos = r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(`Invalid configuration: ${campos}`);
   }
-  if (r.data.JWT_SECRET === PLACEHOLDER_SECRET && r.data.NODE_ENV === 'production') {
-    throw new Error('Invalid configuration: JWT_SECRET still has the .env.example placeholder');
+  if (r.data.JWT_SECRET === PLACEHOLDER_SECRET) {
+    if (r.data.NODE_ENV === 'production') {
+      throw new Error('Invalid configuration: JWT_SECRET still has the .env.example placeholder');
+    }
+    // Public value: anyone could sign valid tokens. Accepted only for local development.
+    log.warn('WARNING: JWT_SECRET is the public .env.example placeholder; set a random value outside local development');
   }
   return r.data;
 }

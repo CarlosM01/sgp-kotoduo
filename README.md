@@ -41,7 +41,7 @@ Los pasos también se pueden correr por separado: `npm run lint`, `npm run typec
 
 ## API
 
-`npm run dev -w api` levanta la API en `http://localhost:3000/api/v1` y lee la configuración del `.env` de la raíz. Si falta una variable o `JWT_SECRET` tiene menos de 32 caracteres, no arranca.
+`npm run dev -w api` levanta la API en `http://localhost:3000/api/v1` y lee la configuración del `.env` de la raíz. Si falta una variable o `JWT_SECRET` tiene menos de 32 caracteres, no arranca. Con el valor de ejemplo de `JWT_SECRET` muestra una advertencia en desarrollo, y `npm start -w api` (compilado, `NODE_ENV=production`) se niega a arrancar: genere uno propio, por ejemplo con `openssl rand -base64 48`.
 
 | Método | Ruta | Acceso |
 |---|---|---|

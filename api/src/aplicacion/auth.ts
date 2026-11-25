@@ -41,7 +41,11 @@ export function crearServicioAuth({ usuarios, hasher, tokens, auditoria }: Depen
   // A hash is always verified, real or dummy, so the response time does not
   // reveal whether the user exists (ES2 section 7.2, "Mensajes").
   let hashFicticio: Promise<string> | undefined;
-  const obtenerHashFicticio = () => (hashFicticio ??= hasher.hash(randomUUID()));
+  const obtenerHashFicticio = () =>
+    (hashFicticio ??= hasher.hash(randomUUID()).catch((err: unknown) => {
+      hashFicticio = undefined; // a transient failure must not be cached for the life of the process
+      throw err;
+    }));
 
   async function emitirSesion(u: UsuarioAuth, debeCambiarClave: boolean): Promise<Sesion> {
     const { token, expiraEn } = await tokens.emitir({ id: u.id, roles: u.roles, debeCambiarClave });

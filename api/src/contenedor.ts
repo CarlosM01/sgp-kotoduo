@@ -19,6 +19,12 @@ export interface Contenedor {
 
 export async function crearContenedor(config: Pick<Config, 'DATABASE_URL' | 'MONGO_URL' | 'JWT_SECRET'>): Promise<Contenedor> {
   const pool = new pg.Pool({ connectionString: config.DATABASE_URL, max: 10 });
+  // node-postgres emits 'error' when the server drops an idle client (restart,
+  // network blip). Without a listener Node treats it as unhandled and the whole
+  // API exits; with it, only the affected queries fail and the pool reconnects.
+  pool.on('error', (err) => {
+    console.error({ msg: 'idle PostgreSQL client error', code: (err as { code?: string }).code });
+  });
   const mongo = await MongoClient.connect(config.MONGO_URL, { serverSelectionTimeoutMS: 5_000 });
 
   const tokens = crearServicioTokensJwt(config.JWT_SECRET);

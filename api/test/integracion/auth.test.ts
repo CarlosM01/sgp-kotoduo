@@ -201,11 +201,12 @@ describe('CP-29 fuerza bruta (AM-07)', () => {
 });
 
 describe('D12 forced password change', () => {
-  it('the seed admin starts with debeCambiarClave and cannot use the API until it changes it', async () => {
+  // Uses its own admin: the seed admin is never touched, so the suite keeps
+  // passing after the real admin changes the public demo password.
+  it('an account that must change its password cannot use the API until it does', async () => {
     const app = entorno.app();
-    const res = await login(app, 'admin', CLAVE_DEMO_SEED);
-    // Only the audit event of this request is removed afterwards, never real admin events.
-    entorno.borrarEventosDeRequest(res.headers['x-request-id'] as string);
+    const admin = await entorno.crearUsuario('ADMINISTRADOR', { debeCambiarClave: true });
+    const res = await login(app, admin.nombreUsuario, admin.clave);
 
     expect(res.status).toBe(200);
     expect(res.body.debeCambiarClave).toBe(true);
