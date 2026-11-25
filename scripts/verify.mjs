@@ -18,6 +18,8 @@ const steps = [
   { name: 'lint', cmd: 'npm', args: ['run', 'lint'] },
   { name: 'typecheck', cmd: 'npm', args: ['run', 'typecheck'] },
   { name: 'test', cmd: 'npm', args: ['test'] },
+  // Needs the databases: docker compose up -d
+  { name: 'test:integracion', cmd: 'npm', args: ['run', 'test:integracion'] },
 ];
 
 // Returns the trimmed output, or null when git is missing or fails.
@@ -181,7 +183,7 @@ for (const step of steps) {
 write('\n===== Summary =====\n');
 for (const r of results) {
   // detail keeps the real cause ("exit 1", "killed by SIGTERM", "failed to start ...").
-  write(`${r.code === 0 ? 'PASS' : 'FAIL'}  ${r.name.padEnd(10)} ${r.detail}  ${r.seconds}s\n`);
+  write(`${r.code === 0 ? 'PASS' : 'FAIL'}  ${r.name.padEnd(Math.max(...steps.map((s) => s.name.length)))} ${r.detail}  ${r.seconds}s\n`);
 }
 const failed = results.filter((r) => r.code !== 0).length;
 write(failed === 0 ? 'Result: all steps passed\n' : `Result: ${failed} step(s) failed\n`);

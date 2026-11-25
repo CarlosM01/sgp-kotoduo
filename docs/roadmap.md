@@ -135,14 +135,14 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ### F2 — API núcleo y seguridad · criterio 3.1.3
 
-- [ ] Express + TypeScript con capas separadas: dominio (reglas puras, testeables con Vitest), aplicación (casos de uso), infraestructura (repositorios PG/Mongo, HTTP).
-- [ ] Validación de entrada con esquemas (zod), por ejemplo `NuevaOrdenSchema`, que rechace campos extra.
-- [ ] Manejo central de errores: respuestas uniformes, sin trazas internas hacia el cliente.
-- [ ] Autenticación: hash de contraseñas con argon2 o bcrypt, política de contraseñas (CP-07), JWT y refresh según D2.
-- [ ] Cambio de clave obligatorio: si `debe_cambiar_clave` es verdadero, el login solo permite `POST /auth/cambiar-clave` (aplica CP-07). El `admin` del seed parte así (D12).
-- [ ] Autorización RBAC **en el servidor**: middleware de permisos con `PERMISOS_POR_ROL` (CP-08) y control de propiedad de la etapa contra IDOR (CP-27).
-- [ ] Endurecimiento: límite de intentos y bloqueo de login (CP-29), `helmet`, CORS restringido, consultas parametrizadas (CP-24).
-- [ ] Bitácora: cada acción relevante escribe un evento en Mongo (HU-12).
+- [x] Express + TypeScript con capas separadas: dominio (reglas puras, testeables con Vitest), aplicación (casos de uso), infraestructura (repositorios PG/Mongo, HTTP).
+- [x] Validación de entrada con esquemas (zod), por ejemplo `NuevaOrdenSchema`, que rechace campos extra.
+- [x] Manejo central de errores: respuestas uniformes, sin trazas internas hacia el cliente.
+- [x] Autenticación: hash de contraseñas con argon2 o bcrypt, política de contraseñas (CP-07), JWT y refresh según D2. _El refresh (D2) queda para el paso 5 de §4.2._
+- [x] Cambio de clave obligatorio: si `debe_cambiar_clave` es verdadero, el login solo permite `POST /auth/cambiar-clave` (aplica CP-07). El `admin` del seed parte así (D12).
+- [x] Autorización RBAC **en el servidor**: middleware de permisos con `PERMISOS_POR_ROL` (CP-08) y control de propiedad de la etapa contra IDOR (CP-27). _El control de propiedad se aplica en F3, cuando existan las rutas de etapas._
+- [x] Endurecimiento: límite de intentos y bloqueo de login (CP-29), `helmet`, CORS restringido, consultas parametrizadas (CP-24).
+- [x] Bitácora: cada acción relevante escribe un evento en Mongo (HU-12).
 
 **Salida:** login funcional y rutas protegidas. Una tabla de perfiles × operaciones en `docs/seguridad.md`.
 

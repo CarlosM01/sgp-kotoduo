@@ -16,7 +16,8 @@
                        "ETAPA_TERMINADA", "ETAPA_BLOQUEADA", "DISENO_SUBIDO", "DISENO_RESUELTO",
                        "INSUMO_MOVIMIENTO", "ALERTA_INSUMO_CREADA", "ALERTA_INSUMO_CERRADA",
                        "USUARIO_CREADO", "USUARIO_ROL_CAMBIADO", "LOGIN_EXITOSO", "LOGIN_FALLIDO",
-                       "CUENTA_BLOQUEADA", "SESIONES_REVOCADAS"]
+                       "CUENTA_BLOQUEADA", "SESIONES_REVOCADAS",
+                       "CLAVE_CAMBIADA", "ACCESO_DENEGADO"]
             },
             "agregado": {
               "bsonType": "object",

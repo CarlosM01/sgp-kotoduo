@@ -30,9 +30,27 @@ El proyecto no usa CI remoto: la verificación se ejecuta en local desde la term
 npm run verify
 ```
 
-Corre `npm run lint`, `npm run typecheck` y `npm test` en ese orden, aunque uno falle, y guarda toda la salida en `evidencias/ejecuciones/verify_<fecha>_<hora>_<commit>.log`. El log registra fecha, rama, commit, si había cambios sin confirmar, versión de Node y sistema operativo, y termina con un resumen PASS/FAIL por paso. El comando sale con código distinto de 0 si algún paso falla. Cada log se puede citar como evidencia de ejecución en el informe.
+Corre `npm run lint`, `npm run typecheck`, `npm test` y `npm run test:integracion` en ese orden, aunque uno falle, y guarda toda la salida en `evidencias/ejecuciones/verify_<fecha>_<hora>_<commit>.log`. El log registra fecha, rama, commit, si había cambios sin confirmar, versión de Node y sistema operativo, y termina con un resumen PASS/FAIL por paso. El comando sale con código distinto de 0 si algún paso falla. Cada log se puede citar como evidencia de ejecución en el informe.
 
-Los pasos también se pueden correr por separado: `npm run lint`, `npm run typecheck`, `npm test`.
+Los pasos también se pueden correr por separado: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:integracion`.
+
+| Suite | Carpeta | Necesita |
+|---|---|---|
+| Unitarias (`npm test`) | `api/test/` (salvo `integracion/`) | Nada: usan adaptadores en memoria |
+| Integración (`npm run test:integracion`) | `api/test/integracion/` | `docker compose up -d` y el `.env`. Crean sus propios usuarios `t.*` y los borran al terminar; no modifican los usuarios de demo |
+
+## API
+
+`npm run dev -w api` levanta la API en `http://localhost:3000/api/v1` y lee la configuración del `.env` de la raíz. Si falta una variable o `JWT_SECRET` tiene menos de 32 caracteres, no arranca.
+
+| Método | Ruta | Acceso |
+|---|---|---|
+| GET | `/health` | Pública |
+| POST | `/auth/login` | Pública (máx. 10 solicitudes por minuto e IP) |
+| POST | `/auth/cambiar-clave` | Cualquier sesión, incluida la que debe cambiar clave |
+| GET | `/bitacora` | Permiso `bitacora.ver` (Administrador completa; Encargada solo con `orden_id`) |
+
+La matriz de permisos y los controles de seguridad están en [docs/seguridad.md](docs/seguridad.md).
 
 ## Base de datos y datos de demo
 
@@ -51,6 +69,12 @@ Los pasos también se pueden correr por separado: `npm run lint`, `npm run typec
 docker compose exec -T postgres psql -U sgp -d sgp_kotoduo -f /sgp/volumen.sql
 docker compose exec -T postgres sh -c 'psql -U sgp -d sgp_kotoduo -X -f /sgp/pruebas_integridad.sql 2>&1'
 docker compose exec -T mongo mongosh --quiet sgp_docs --file /bd/pruebas_integridad.js
+```
+
+Si el volumen de MongoDB se creó antes de F2, su validador no acepta los eventos `CLAVE_CAMBIADA` y `ACCESO_DENEGADO` (D13). Se actualiza sin borrar datos con:
+
+```bash
+docker compose exec -T mongo mongosh --quiet sgp_docs --eval 'const d = JSON.parse(fs.readFileSync("/bd/mongo_esquemas.json", "utf8")).colecciones.bitacora_eventos; printjson(db.runCommand({ collMod: "bitacora_eventos", validator: d.validator }))'
 ```
 
 Para quitar el volumen antes de la demo: `DELETE FROM sgp.orden_trabajo WHERE codigo ~ '^OT-2025-[0-9]{5}$' AND titulo LIKE 'VOL-%';`
