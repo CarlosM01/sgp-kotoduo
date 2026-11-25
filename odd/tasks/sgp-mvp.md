@@ -28,7 +28,10 @@ The full specification is `docs/roadmap.md`. Numbered references:
 | T3b | S4 | inline | done (2954f2f) | GET /plantillas, POST /ordenes (CP-11), GET /ordenes, GET /ordenes/{id} |
 | T3c | S4 | inline | done (2954f2f) | PATCH /etapas/{id}/responsable, GET /mi-trabajo, POST /etapas/{id}/iniciar\|terminar (CP-12, CP-13, CP-19, CP-27) |
 | T3d | S4 | inline | done (2954f2f) | GET /panel over v_panel_ordenes (CP-18) |
-| T4 | S5 | inline | pending | — |
+| T4 | S5 | inline | in progress | branch `feat/f4-insumos-alertas` from `feat/f3-ordenes-etapas` |
+| T4a | S5 | inline | in progress | domain: estaBajoMinimo (CP-05), ConsumosSchema, NuevaAlertaSchema |
+| T4b | S5 | inline | in progress | POST /etapas/{id}/terminar with `consumos` → movimiento_insumo + single automatic alert (CP-12 consumption, CP-14) |
+| T4c | S5 | inline | in progress | POST /alertas manual report (CP-15), GET /alertas, GET /insumos, panel `alertasAbiertas` |
 | T5 | S6 | inline | pending | — |
 | T6 | S7 | inline | pending | — |
 | T7 | S8 | inline | pending | — |
@@ -61,3 +64,4 @@ Remote items outside the agent's reach (need the user): GitHub repo + push, GitH
 - L17 (2026-11-25): verifier on 2954f2f: all CPs PASS except B1 (CP-24: ES2 expects 400 for `GET /ordenes/1;DROP TABLE x`, got 404) + advisories A1 (especificaciones nested ~3000 levels → 500 stack overflow in z.json()), A2 (start on ANULADA order allowed), A3 (Mi Trabajo `siguiente` could be EN_CURSO of a DETENIDA order). One correction batch 3220f9e (RED 5 → GREEN; D22: order ids 400, stage ids keep 404). Recheck limited to B1/A1/A2/A3: 4/4 PASS. verify 4/4 PASS, log 3b5c0aa. Assess escalated with item 4 → high_risk; consent "Revisar este cambio" (granted), lenses risk/resilience/reliability, lineage review-9c198b1ec75e3629 APPROVED and acknowledged (b45f1c0..3b5c0aa). Non-blocking: R3 untested 409 branches of asignar → tests added; R1-001/R3 `npm start` without NODE_ENV (F2 8bd1dac) → F6 compose must set NODE_ENV=production; R4 sequential audit latency and year-scan under the code lock → documented in docs/seguridad.md §4. Roadmap F3 ticked.
 - Next: T4 (F4) — consumptions on finish (`movimiento_insumo`), single automatic alert (CP-05, CP-14), POST/GET /alertas (CP-15), GET /insumos. Pending user: push branches, merge F1–F3 into main, assumptions 1/5/12 of §3.
 
+- L18 (2026-11-25): "Sí, empieza F4". Branch `feat/f4-insumos-alertas` from `feat/f3-ordenes-etapas`. Scope from ES2: CP-05 `estaBajoMinimo` 2/2 true, 2,01/2 false, 0/0 true; CP-12 body `{version, consumos:[{insumoId:3, cantidad:0.6}]}`; CP-14 stock 4/min 2, consumptions 2,5 and 0,5 → one AUTOMATICA alert, then 2 → 409 and the whole transaction rolled back; CP-15 `POST /api/v1/alertas` `{insumoId, etapaId, comentario}` → 201, MANUAL alert with `reportada_por` (the ALERTA_INSUMO notification stays excluded with notifications). Decisions D23 (consumptions only of supplies required by the stage, optional list), D24 (manual report only by the stage's responsible person on an open stage of an active order; foreign stage 404 like CP-27), D25 (the DDL trigger creates the automatic alert; the API locks the supply row, refuses insufficient stock with a readable 409 and logs INSUMO_MOVIMIENTO / ALERTA_INSUMO_CREADA). Risk: item 4 (concurrent consumptions of the same supply) → independent verifier at the end of F4.

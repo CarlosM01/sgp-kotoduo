@@ -5,10 +5,12 @@ import pg from 'pg';
 import type { Servicios } from './app.js';
 import { crearServicioAuth } from './aplicacion/auth.js';
 import { crearServicioEtapas } from './aplicacion/etapas.js';
+import { crearServicioInsumos } from './aplicacion/insumos.js';
 import { crearServicioOrdenes } from './aplicacion/ordenes.js';
 import type { Config } from './config.js';
 import { crearAuditoriaMongo } from './infraestructura/mongo/auditoria-mongo.js';
 import { crearEtapaRepositorioPg } from './infraestructura/pg/etapa-repositorio.js';
+import { crearInsumoRepositorioPg } from './infraestructura/pg/insumo-repositorio.js';
 import { crearOrdenRepositorioPg } from './infraestructura/pg/orden-repositorio.js';
 import { crearUsuarioRepositorioPg } from './infraestructura/pg/usuario-repositorio.js';
 import { crearHasherArgon2 } from './infraestructura/seguridad/argon2.js';
@@ -49,6 +51,7 @@ export async function crearContenedor(config: Pick<Config, 'DATABASE_URL' | 'MON
       auth,
       ordenes: crearServicioOrdenes({ ordenes: crearOrdenRepositorioPg(pool), etapas: etapasRepo, usuarios, auditoria }),
       etapas: crearServicioEtapas({ etapas: etapasRepo, auditoria }),
+      insumos: crearServicioInsumos({ insumos: crearInsumoRepositorioPg(pool) }),
       tokens,
       auditoria,
     },

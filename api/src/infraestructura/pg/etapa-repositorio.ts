@@ -1,9 +1,17 @@
 // PostgreSQL repository of stages. Concurrency (CP-19): the order row and
 // then the stage row are locked FOR UPDATE, always in that order, so two
 // requests on the same order are serialized without deadlocks; the second one
-// sees the new version and is rejected by the use case.
+// sees the new version and is rejected by the use case. Supply rows are locked
+// after them, in id order (D25).
 import type { Pool, PoolClient } from 'pg';
-import type { EtapaBloqueada, EtapaDeTrabajo, EtapaRepositorio, SiguienteEtapa, TransaccionEtapa } from '../../aplicacion/puertos.js';
+import type {
+  EtapaBloqueada,
+  EtapaDeTrabajo,
+  EtapaRepositorio,
+  InsumoBloqueado,
+  SiguienteEtapa,
+  TransaccionEtapa,
+} from '../../aplicacion/puertos.js';
 import { ESTADOS_ORDEN_ACTIVOS, type EstadoEtapa, type EstadoOrden } from '../../dominio/estados.js';
 import { enTransaccion } from './orden-repositorio.js';
 
@@ -71,7 +79,73 @@ function transaccion(c: PoolClient, etapa: EtapaBloqueada): TransaccionEtapa {
         [etapa.ordenId, hacia],
       );
     },
+
+    async bloquearInsumoRequerido(insumoId: number): Promise<InsumoBloqueado | null> {
+      const { rows: [i] } = await c.query<{
+        id: number;
+        codigo: string;
+        nombre: string;
+        unidad_medida: string;
+        stock_actual: string;
+        stock_minimo: string;
+      }>(
+        `SELECT i.id, i.codigo, i.nombre, i.unidad_medida, i.stock_actual, i.stock_minimo
+           FROM sgp.insumo i
+          WHERE i.id = $2 AND i.activo
+            AND EXISTS (SELECT 1 FROM sgp.requerimiento_insumo r WHERE r.etapa_orden_id = $1 AND r.insumo_id = i.id)
+            FOR UPDATE OF i`,
+        [etapa.id, insumoId],
+      );
+      if (!i) return null;
+      // Read after the lock, in a new statement: it sees the alert committed by
+      // a transaction this one waited for.
+      return {
+        id: i.id,
+        codigo: i.codigo,
+        nombre: i.nombre,
+        unidad: i.unidad_medida,
+        stockActual: Number(i.stock_actual),
+        stockMinimo: Number(i.stock_minimo),
+        alertaAutomaticaId: await alertaAutomaticaAbierta(c, insumoId),
+      };
+    },
+
+    async registrarConsumo(insumoId: number, cantidad: number, usuarioId: string) {
+      await c.query(
+        `INSERT INTO sgp.movimiento_insumo (insumo_id, tipo, cantidad, etapa_orden_id, usuario_id, comentario)
+         VALUES ($1, 'CONSUMO', -($2::numeric), $3, $4, 'Consumo al terminar etapa')`,
+        [insumoId, cantidad, etapa.id, usuarioId],
+      );
+      await c.query(
+        `UPDATE sgp.requerimiento_insumo SET cantidad_consumida = cantidad_consumida + $3::numeric
+          WHERE etapa_orden_id = $1 AND insumo_id = $2`,
+        [etapa.id, insumoId, cantidad],
+      );
+      const { rows: [r] } = await c.query<{ stock_actual: string }>(`SELECT stock_actual FROM sgp.insumo WHERE id = $1`, [insumoId]);
+      return { stockActual: Number(r!.stock_actual), alertaAutomaticaId: await alertaAutomaticaAbierta(c, insumoId) };
+    },
+
+    async crearAlertaManual(alerta) {
+      const { rows: [a] } = await c.query<{ id: number; codigo: string; creada_en: Date }>(
+        `WITH i AS (SELECT id, codigo FROM sgp.insumo WHERE id = $1 AND activo),
+              nueva AS (
+                INSERT INTO sgp.alerta_insumo (insumo_id, etapa_orden_id, origen, cantidad_faltante, comentario, reportada_por)
+                SELECT i.id, $2, 'MANUAL', $3::numeric, $4, $5 FROM i
+                RETURNING id, creada_en)
+         SELECT nueva.id, i.codigo, nueva.creada_en FROM nueva, i`,
+        [alerta.insumoId, etapa.id, alerta.cantidadFaltante ?? null, alerta.comentario ?? null, alerta.reportadaPor],
+      );
+      return a ? { id: a.id, codigo: a.codigo, creadaEn: a.creada_en.toISOString() } : null;
+    },
   };
+}
+
+async function alertaAutomaticaAbierta(c: PoolClient, insumoId: number): Promise<number | null> {
+  const { rows: [a] } = await c.query<{ id: number }>(
+    `SELECT id FROM sgp.alerta_insumo WHERE insumo_id = $1 AND origen = 'AUTOMATICA' AND estado <> 'CERRADA'`,
+    [insumoId],
+  );
+  return a?.id ?? null;
 }
 
 export function crearEtapaRepositorioPg(pool: Pool): EtapaRepositorio {

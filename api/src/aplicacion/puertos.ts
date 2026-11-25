@@ -226,6 +226,8 @@ export interface ResumenPanel {
   activas: number;
   atrasadas: number;
   enRiesgo: number;
+  /** Supply alerts not yet closed (automatic and manual), so the panel shows them (§1.2). */
+  alertasAbiertas: number;
 }
 
 export interface OrdenRepositorio {
@@ -271,6 +273,85 @@ export interface TransaccionEtapa {
   resumenEtapas(): Promise<ResumenEtapas>;
   /** Also sets terminada_en when the order reaches TERMINADA. */
   cambiarEstadoOrden(hacia: EstadoOrden): Promise<void>;
+  /**
+   * Locks the supply row (FOR UPDATE) when this stage requires it and the
+   * supply is active; null otherwise. Callers lock supplies in id order.
+   */
+  bloquearInsumoRequerido(insumoId: number): Promise<InsumoBloqueado | null>;
+  /**
+   * Inserts the CONSUMO movement of this stage and adds the quantity to its
+   * requirement. The DDL trigger updates the stock and, at or below the
+   * minimum, opens the automatic alert (at most one open per supply).
+   */
+  registrarConsumo(insumoId: number, cantidad: number, usuarioId: string): Promise<ConsumoAplicado>;
+  /** Inserts a MANUAL alert for this stage; null when the supply does not exist or is inactive. */
+  crearAlertaManual(alerta: AlertaManual): Promise<{ id: number; codigo: string; creadaEn: string } | null>;
+}
+
+// ---------------------------------------------------------------------------
+// Flow 4: supplies, consumptions and alerts (F4).
+
+export interface InsumoBloqueado {
+  id: number;
+  codigo: string;
+  nombre: string;
+  unidad: string;
+  stockActual: number;
+  stockMinimo: number;
+  /** Open automatic alert of the supply before the consumption, if any. */
+  alertaAutomaticaId: number | null;
+}
+
+export interface ConsumoAplicado {
+  stockActual: number;
+  /** Open automatic alert after the consumption, if any. */
+  alertaAutomaticaId: number | null;
+}
+
+export interface AlertaManual {
+  insumoId: number;
+  cantidadFaltante?: number | undefined;
+  comentario?: string | undefined;
+  reportadaPor: string;
+}
+
+export interface InsumoVista {
+  id: number;
+  codigo: string;
+  nombre: string;
+  unidad: string;
+  stockActual: number;
+  stockMinimo: number;
+  alertasAbiertas: number;
+}
+
+export const FILTROS_ALERTA = ['abiertas', 'cerradas', 'todas'] as const;
+export type FiltroAlerta = (typeof FILTROS_ALERTA)[number];
+
+export interface AlertaVista {
+  id: number;
+  origen: 'AUTOMATICA' | 'MANUAL';
+  estado: 'ABIERTA' | 'EN_GESTION' | 'CERRADA';
+  cantidadFaltante: number | null;
+  /** Free text as typed by the reporter: the web client must render it escaped (CP-25). */
+  comentario: string | null;
+  insumo: { id: number; codigo: string; nombre: string; unidad: string };
+  etapa: { id: string; nombre: string } | null;
+  orden: { id: string; codigo: string } | null;
+  reportadaPor: { id: string; nombreCompleto: string } | null;
+  creadaEn: string;
+  cerradaEn: string | null;
+}
+
+export interface InsumoRepositorio {
+  /** Active supplies, those at or below their minimum first. */
+  listar(): Promise<InsumoVista[]>;
+  listarAlertas(filtro: {
+    estado: FiltroAlerta;
+    insumoId?: number | undefined;
+    pagina: number;
+    tamano: number;
+  }): Promise<{ datos: AlertaVista[]; total: number }>;
 }
 
 export interface EtapaDeTrabajo {

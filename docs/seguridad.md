@@ -43,8 +43,11 @@ Cada ruta se declara en un registro con su regla de acceso ([`registro-rutas.ts`
 | GET | `/api/v1/ordenes`, `/api/v1/ordenes/{id}` | `ordenes.ver`; un `id` mal formado responde 400 (CP-24) | 401 / 403 / 400 / 404 |
 | PATCH | `/api/v1/etapas/{id}/responsable` | `etapas.gestionar`; el responsable debe tener `etapas.avanzar` | 401 / 403 / 400 / 404 / 409 |
 | GET | `/api/v1/mi-trabajo` | `etapas.avanzar`; solo las etapas propias | 401 / 403 |
-| POST | `/api/v1/etapas/{id}/iniciar`, `/terminar` | `etapas.avanzar` + ser el responsable de la etapa (◐ de la Tabla 7.1 para todos los roles) | 401 / 403 / **404 si la etapa es ajena** / 409 |
+| POST | `/api/v1/etapas/{id}/iniciar`, `/terminar` | `etapas.avanzar` + ser el responsable de la etapa (◐ de la Tabla 7.1 para todos los roles). `terminar` acepta `consumos` solo de los insumos que la etapa requiere (D23) | 401 / 403 / 400 / **404 si la etapa es ajena** / 409 (versión, estado o stock insuficiente) |
 | GET | `/api/v1/panel` | `panel.ver` (Administrador, Encargada y Vendedor según la Tabla 7.1) | 401 / 403 / 400 |
+| GET | `/api/v1/insumos` | `insumos.gestionar` (Administrador y Encargada) | 401 / 403 |
+| GET | `/api/v1/alertas` | `insumos.gestionar` | 401 / 403 / 400 |
+| POST | `/api/v1/alertas` | `insumos.reportar_faltante` + ser el responsable de la etapa indicada (D24) | 401 / 403 / 400 / **404 si la etapa es ajena** / 409 |
 
 Secuencia por solicitud protegida: token válido (401) → sin cambio de clave pendiente (403 `PASSWORD_CHANGE_REQUIRED`) → permiso del rol (403 `FORBIDDEN`, con evento `ACCESO_DENEGADO`) → validación de la entrada (400) → caso de uso.
 
@@ -67,8 +70,10 @@ Secuencia por solicitud protegida: token válido (401) → sin cambio de clave p
 | CORS | Solo el origen de `CORS_ORIGIN` (cliente web) | `app.test.ts` |
 | Tamaño del cuerpo | Máximo 100 kB → 413 | `app.test.ts` |
 | Control de propiedad (IDOR, AM-05) | Iniciar o terminar exige `etapa.responsable_id = usuario del token`. Una etapa ajena responde el mismo 404 que una inexistente (no revela que existe), no cambia nada y registra `ACCESO_DENEGADO` con motivo `NO_ES_RESPONSABLE`. En las rutas de etapas, los id mal formados también responden 404; en `/ordenes/{id}` responden 400 por validación (CP-24, D22) | CP-27 |
+| Control de propiedad en el reporte de faltante | `POST /alertas` aplica el mismo control que iniciar o terminar: una etapa ajena responde 404 y registra `ACCESO_DENEGADO` con ruta `/alertas`. El origen (`MANUAL`) y quien reporta salen del servidor, nunca del cuerpo | CP-15 |
+| Stock y alertas | El consumo bloquea la fila del insumo (`FOR UPDATE`, en orden de `id`, después de la OT y la etapa) y rechaza el stock insuficiente con 409 antes de insertar; el `CHECK` de stock queda como respaldo. El trigger abre a lo más una alerta automática por insumo (índice único parcial). Dos consumos simultáneos del mismo insumo dan un 200 y un 409, y la alerta se informa una sola vez | CP-14, D25 |
 | Concurrencia en etapas | La transacción bloquea la fila de la OT y luego la de la etapa (`FOR UPDATE`, siempre en ese orden) y compara la `version` enviada por el cliente: dos "terminar" simultáneos dan un 200 y un 409, y la siguiente etapa se habilita una sola vez. El trigger de la base vuelve a validar la transición | CP-19 |
-| Bitácora (HU-12) | Eventos `LOGIN_EXITOSO`, `LOGIN_FALLIDO`, `CUENTA_BLOQUEADA`, `CLAVE_CAMBIADA`, `ACCESO_DENEGADO`, `ORDEN_REGISTRADA`, `ORDEN_ESTADO_CAMBIADO`, `ETAPA_ASIGNADA`, `ETAPA_INICIADA`, `ETAPA_TERMINADA` en `bitacora_eventos`, con IP y `request_id`. Nunca se guardan claves ni tokens | CP-09, CP-11, CP-13, CP-28 |
+| Bitácora (HU-12) | Eventos `LOGIN_EXITOSO`, `LOGIN_FALLIDO`, `CUENTA_BLOQUEADA`, `CLAVE_CAMBIADA`, `ACCESO_DENEGADO`, `ORDEN_REGISTRADA`, `ORDEN_ESTADO_CAMBIADO`, `ETAPA_ASIGNADA`, `ETAPA_INICIADA`, `ETAPA_TERMINADA`, `INSUMO_MOVIMIENTO`, `ALERTA_INSUMO_CREADA` en `bitacora_eventos`, con IP y `request_id`. Nunca se guardan claves ni tokens; el comentario libre de una alerta queda solo en PostgreSQL | CP-09, CP-11, CP-13, CP-14, CP-15, CP-28 |
 
 ## 4. Pendiente o fuera del MVP
 

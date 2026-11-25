@@ -353,15 +353,22 @@ export function crearOrdenRepositorioPg(pool: Pool): OrdenRepositorio {
     async resumenPanel() {
       // Same predicates as v_panel_ordenes, computed on orden_trabajo alone
       // (no join with the stages), so the counters stay cheap with volume.
-      const { rows: [r] } = await pool.query<{ activas: string; atrasadas: string; en_riesgo: string }>(
+      const { rows: [r] } = await pool.query<{ activas: string; atrasadas: string; en_riesgo: string; alertas: string }>(
         `SELECT COUNT(*) AS activas,
                 COUNT(*) FILTER (WHERE fecha_compromiso < CURRENT_DATE) AS atrasadas,
-                COUNT(*) FILTER (WHERE COALESCE(fecha_estimada_termino, fecha_compromiso) > fecha_compromiso) AS en_riesgo
+                COUNT(*) FILTER (WHERE COALESCE(fecha_estimada_termino, fecha_compromiso) > fecha_compromiso) AS en_riesgo,
+                -- ix_alerta_estado (estado, creada_en) serves this count.
+                (SELECT COUNT(*) FROM sgp.alerta_insumo WHERE estado <> 'CERRADA') AS alertas
            FROM sgp.orden_trabajo
           WHERE estado = ANY($1::text[])`,
         [ESTADOS_ORDEN_ACTIVOS],
       );
-      return { activas: Number(r?.activas ?? 0), atrasadas: Number(r?.atrasadas ?? 0), enRiesgo: Number(r?.en_riesgo ?? 0) };
+      return {
+        activas: Number(r?.activas ?? 0),
+        atrasadas: Number(r?.atrasadas ?? 0),
+        enRiesgo: Number(r?.en_riesgo ?? 0),
+        alertasAbiertas: Number(r?.alertas ?? 0),
+      };
     },
   };
 }

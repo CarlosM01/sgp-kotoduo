@@ -8,6 +8,7 @@ import type { ServicioEtapas } from '../../aplicacion/etapas.js';
 import type { ServicioOrdenes } from '../../aplicacion/ordenes.js';
 import { FILTROS_PANEL } from '../../aplicacion/puertos.js';
 import { ESTADOS_ORDEN } from '../../dominio/estados.js';
+import { ConsumosSchema } from '../../dominio/insumos.js';
 import { NuevaOrdenSchema } from '../../dominio/nueva-orden.js';
 import { actorDe, contextoDe, type crearRegistroRutas } from './registro-rutas.js';
 import { parsear } from './validar.js';
@@ -37,6 +38,8 @@ const paginacion = {
 const ListarOrdenesSchema = z.object({ ...paginacion, estado: z.enum(ESTADOS_ORDEN).optional() }).strict();
 const PanelSchema = z.object({ ...paginacion, filtro: z.enum(FILTROS_PANEL).default('activas') }).strict();
 const VersionSchema = z.object({ version: z.number().int().min(1) }).strict();
+// CP-12, D23: actual consumptions of the stage's supplies; none when omitted.
+const TerminarSchema = z.object({ version: z.number().int().min(1), consumos: ConsumosSchema }).strict();
 const AsignarSchema = z.object({ responsableId: IdSchema, version: z.number().int().min(1) }).strict();
 
 interface Servicios {
@@ -81,8 +84,8 @@ export function registrarRutasOrdenes({ agregar }: ReturnType<typeof crearRegist
 
   agregar('post', '/etapas/:id/terminar', { tipo: 'permiso', permiso: 'etapas.avanzar' }, async (req, res) => {
     const id = idEtapaDe(req);
-    const { version } = parsear(VersionSchema, req.body);
-    res.json(await etapas.terminar(actorDe(res), id, version, contextoDe(req, res)));
+    const { version, consumos } = parsear(TerminarSchema, req.body);
+    res.json(await etapas.terminar(actorDe(res), id, version, consumos, contextoDe(req, res)));
   });
 
   agregar('get', '/panel', { tipo: 'permiso', permiso: 'panel.ver' }, async (req, res) => {

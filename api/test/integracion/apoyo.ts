@@ -26,6 +26,8 @@ export interface Entorno {
   sesion(rol: CodigoRol): Promise<UsuarioPrueba & { token: string }>;
   eventosDe(usuarioId: string): Promise<Array<{ tipo: string; payload: Record<string, unknown>; actor: { ip?: string } }>>;
   usuario(id: string): Promise<{ intentos_fallidos: number; bloqueado_hasta: Date | null; debe_cambiar_clave: boolean; password_hash: string }>;
+  /** Creates a supply (code prefix "T-") so tests never change the stock of the seed supplies. */
+  crearInsumo(stock: number, minimo: number): Promise<{ id: number; codigo: string; nombre: string }>;
   limpiar(): Promise<void>;
 }
 
@@ -35,6 +37,7 @@ export async function prepararEntorno(): Promise<Entorno> {
   const eventos = mongo.db().collection('bitacora_eventos');
   const hasher = crearHasherArgon2();
   const creados: string[] = [];
+  const insumos: number[] = [];
   const inicio = new Date();
   const silencioso = { error: () => {}, warn: () => {} };
 
@@ -83,6 +86,18 @@ export async function prepararEntorno(): Promise<Entorno> {
       return rows[0];
     },
 
+    async crearInsumo(stock, minimo) {
+      const codigo = `T-${randomUUID().slice(0, 8)}`;
+      const nombre = `Insumo de prueba ${codigo}`;
+      const { rows: [r] } = await pool.query<{ id: number }>(
+        `INSERT INTO sgp.insumo (codigo, nombre, unidad_medida, stock_actual, stock_minimo)
+         VALUES ($1, $2, 'PLIEGO', $3, $4) RETURNING id`,
+        [codigo, nombre, stock, minimo],
+      );
+      insumos.push(r!.id);
+      return { id: r!.id, codigo, nombre };
+    },
+
     async limpiar() {
       try {
         await eventos.deleteMany({
@@ -94,7 +109,14 @@ export async function prepararEntorno(): Promise<Entorno> {
         });
         // Orders created by test users go first (creado_por is ON DELETE RESTRICT);
         // their stages and requirements are removed by ON DELETE CASCADE.
+        // Kardex and alerts of the test supplies go before the orders: deleting a
+        // stage sets movimiento_insumo.etapa_orden_id to NULL, which the CHECK
+        // ck_mov_consumo_etapa refuses for a CONSUMO. movimiento_insumo is
+        // insert-only for sgp_app; the tests connect as the owner.
+        await pool.query(`DELETE FROM sgp.alerta_insumo WHERE insumo_id = ANY($1::int[])`, [insumos]);
+        await pool.query(`DELETE FROM sgp.movimiento_insumo WHERE insumo_id = ANY($1::int[])`, [insumos]);
         await pool.query(`DELETE FROM sgp.orden_trabajo WHERE creado_por = ANY($1::uuid[])`, [creados]);
+        await pool.query(`DELETE FROM sgp.insumo WHERE id = ANY($1::int[])`, [insumos]);
         await pool.query(`DELETE FROM sgp.usuario WHERE id = ANY($1::uuid[])`, [creados]);
       } finally {
         await contenedor.cerrar();

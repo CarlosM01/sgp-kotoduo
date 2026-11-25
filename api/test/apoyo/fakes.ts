@@ -2,6 +2,7 @@
 import { crearApi, type Api } from '../../src/app.js';
 import { crearServicioAuth } from '../../src/aplicacion/auth.js';
 import type { ServicioEtapas } from '../../src/aplicacion/etapas.js';
+import type { ServicioInsumos } from '../../src/aplicacion/insumos.js';
 import type { ServicioOrdenes } from '../../src/aplicacion/ordenes.js';
 import type { Auditoria, Hasher, NuevoEvento, UsuarioAuth, UsuarioRepositorio } from '../../src/aplicacion/puertos.js';
 import { crearServicioTokensJwt } from '../../src/infraestructura/seguridad/tokens-jwt.js';
@@ -43,11 +44,11 @@ export function crearApiDePrueba(usuarios: UsuarioAuth[] = []): Api & { auditori
   const tokens = crearServicioTokensJwt(SECRETO_PRUEBA);
   const auditoria = auditoriaEnMemoria();
   const auth = crearServicioAuth({ usuarios: repositorioEnMemoria(usuarios), hasher: hasherPlano, tokens, auditoria });
-  // HTTP unit tests do not reach the order use cases; any call fails loudly.
+  // HTTP unit tests do not reach the order or supply use cases; any call fails loudly.
   const noUsado = new Proxy({}, { get: () => () => Promise.reject(new Error('not available in HTTP unit tests')) });
   const silencioso = { error: () => {}, warn: () => {} };
   return {
-    ...crearApi({ corsOrigin: 'http://localhost:5173', servicios: { auth, ordenes: noUsado as ServicioOrdenes, etapas: noUsado as ServicioEtapas, tokens, auditoria }, log: silencioso }),
+    ...crearApi({ corsOrigin: 'http://localhost:5173', servicios: { auth, ordenes: noUsado as ServicioOrdenes, etapas: noUsado as ServicioEtapas, insumos: noUsado as ServicioInsumos, tokens, auditoria }, log: silencioso }),
     auditoria,
   };
 }
