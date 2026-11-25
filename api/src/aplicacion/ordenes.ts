@@ -2,7 +2,7 @@
 // and the supervision panel of flow 3 (HU-10; CU-10).
 import { calcularFechaEstimada, fechaLocal } from '../dominio/calendario.js';
 import type { NuevaOrden } from '../dominio/nueva-orden.js';
-import { tienePermiso } from '../dominio/permisos.js';
+import { PERMISOS_POR_ROL, ROLES, tienePermiso } from '../dominio/permisos.js';
 import { generarEtapas } from '../dominio/plantilla.js';
 import { ErrorConflicto, ErrorNoEncontrado, ErrorValidacion, ErrorVersion } from './errores.js';
 import type {
@@ -17,10 +17,14 @@ import type {
   OrdenRepositorio,
   OrdenResumen,
   Pagina,
+  Responsable,
   ResumenPanel,
   TipoTrabajoVista,
   UsuarioRepositorio,
 } from './puertos.js';
+
+/** Roles whose users asignarResponsable accepts: derived from the single permission map. */
+const ROLES_QUE_AVANZAN = ROLES.filter((r) => PERMISOS_POR_ROL[r].has('etapas.avanzar'));
 
 export interface OrdenCreada {
   id: string;
@@ -47,6 +51,8 @@ export interface ServicioOrdenes {
     datos: { responsableId: string; version: number },
     ctx: Contexto,
   ): Promise<Asignacion>;
+  /** People that asignarResponsable accepts (D26): active users allowed to advance stages. */
+  responsables(): Promise<Responsable[]>;
   panel(filtro: { filtro: FiltroPanel; q?: string | undefined; pagina: number; tamano: number }): Promise<Pagina<FilaPanel> & { resumen: ResumenPanel }>;
 }
 
@@ -152,6 +158,8 @@ export function crearServicioOrdenes({ ordenes, etapas, usuarios, auditoria, aho
       });
       return { etapaId, responsableId, version: r.version };
     },
+
+    responsables: () => usuarios.listarActivosConRoles(ROLES_QUE_AVANZAN),
 
     async panel(filtro) {
       const [{ datos, total }, resumen] = await Promise.all([ordenes.panel(filtro), ordenes.resumenPanel()]);

@@ -49,6 +49,23 @@ export function crearUsuarioRepositorioPg(pool: Pool): UsuarioRepositorio {
       return rows[0] ? aUsuario(rows[0]) : null;
     },
 
+    async listarActivosConRoles(roles) {
+      // Only id, name and roles leave the database: never the hash or contact data.
+      const { rows } = await pool.query<{ id: string; nombre_completo: string; roles: string[] }>(
+        `SELECT u.id, u.nombre_completo, array_agg(r.codigo ORDER BY r.codigo) AS roles
+           FROM sgp.usuario u
+           JOIN sgp.usuario_rol ur ON ur.usuario_id = u.id
+           JOIN sgp.rol r          ON r.id = ur.rol_id
+          WHERE u.activo
+          GROUP BY u.id
+         HAVING bool_or(r.codigo = ANY($1::text[]))
+          ORDER BY u.nombre_completo, u.id
+          LIMIT 500`,
+        [roles],
+      );
+      return rows.map((f) => ({ id: f.id, nombreCompleto: f.nombre_completo, roles: f.roles.filter(esCodigoRol) }));
+    },
+
     async reservarIntento(id, maxIntentos) {
       // Counts the attempt before the password is checked. One UPDATE: the row
       // lock serializes concurrent requests, so at most `maxIntentos` checks run

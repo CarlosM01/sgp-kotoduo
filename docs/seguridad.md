@@ -42,7 +42,8 @@ Cada ruta se declara en un registro con su regla de acceso ([`registro-rutas.ts`
 | POST | `/api/v1/ordenes` | `ordenes.crear` | 401 / 403 / 400 |
 | GET | `/api/v1/ordenes`, `/api/v1/ordenes/{id}` | `ordenes.ver`; un `id` mal formado responde 400 (CP-24) | 401 / 403 / 400 / 404 |
 | PATCH | `/api/v1/etapas/{id}/responsable` | `etapas.gestionar`; el responsable debe tener `etapas.avanzar` | 401 / 403 / 400 / 404 / 409 |
-| GET | `/api/v1/mi-trabajo` | `etapas.avanzar`; solo las etapas propias | 401 / 403 |
+| GET | `/api/v1/responsables` | `etapas.gestionar`; lista solo `id`, nombre y roles de los usuarios activos con `etapas.avanzar` (D26) | 401 / 403 |
+| GET | `/api/v1/mi-trabajo` | `etapas.avanzar`; solo las etapas propias, con sus insumos requeridos (D26) | 401 / 403 |
 | POST | `/api/v1/etapas/{id}/iniciar`, `/terminar` | `etapas.avanzar` + ser el responsable de la etapa (◐ de la Tabla 7.1 para todos los roles). `terminar` acepta `consumos` solo de los insumos que la etapa requiere (D23) | 401 / 403 / 400 / **404 si la etapa es ajena** / 409 (versión, estado o stock insuficiente) |
 | GET | `/api/v1/panel` | `panel.ver` (Administrador, Encargada y Vendedor según la Tabla 7.1) | 401 / 403 / 400 |
 | GET | `/api/v1/insumos` | `insumos.gestionar` (Administrador y Encargada) | 401 / 403 |

@@ -151,6 +151,21 @@ describe('HU-01: Mi Trabajo', () => {
     expect(ajeno.body.etapas.map((e: { id: string }) => e.id)).not.toContain(etapas[0]!.id);
   });
 
+  it('each stage carries the supplies it requires, the same as the order detail (D26)', async () => {
+    const { ordenId } = await ordenAsignada(operarioB, 1);
+
+    const res = await request(api()).get('/api/v1/mi-trabajo').auth(operarioB.token, { type: 'bearer' });
+    const det = await request(api()).get(`/api/v1/ordenes/${ordenId}`).auth(encargada.token, { type: 'bearer' });
+
+    expect(res.status).toBe(200);
+    const etapasDetalle = det.body.etapas as Array<{ id: string; requerimientos: unknown[] }>;
+    expect(etapasDetalle.some((e) => e.requerimientos.length > 0)).toBe(true);
+    for (const e of etapasDetalle) {
+      const mia = res.body.etapas.find((x: { id: string }) => x.id === e.id);
+      expect(mia.requerimientos).toEqual(e.requerimientos);
+    }
+  });
+
   it('a stage in progress is the next activity', async () => {
     const { etapas } = await ordenAsignada(operarioB);
     const ini = await accion('iniciar', etapas[0]!.id, (await etapaEnBd(etapas[0]!.id)).version, operarioB);

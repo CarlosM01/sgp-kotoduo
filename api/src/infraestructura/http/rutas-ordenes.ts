@@ -72,6 +72,11 @@ export function registrarRutasOrdenes({ agregar }: ReturnType<typeof crearRegist
     res.json(await ordenes.asignarResponsable(actorDe(res), id, datos, contextoDe(req, res)));
   });
 
+  // D26: candidates for the assignment select (same rule as the assignment itself).
+  agregar('get', '/responsables', { tipo: 'permiso', permiso: 'etapas.gestionar' }, async (_req, res) => {
+    res.json({ datos: await ordenes.responsables() });
+  });
+
   agregar('get', '/mi-trabajo', { tipo: 'permiso', permiso: 'etapas.avanzar' }, async (_req, res) => {
     res.json(await etapas.miTrabajo(actorDe(res)));
   });

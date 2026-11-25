@@ -26,6 +26,10 @@ export function repositorioEnMemoria(usuarios: UsuarioAuth[] = []): UsuarioRepos
       const u = porId.get(id);
       if (u) Object.assign(u, { passwordHash: h, debeCambiarClave: false });
     },
+    listarActivosConRoles: async (roles) =>
+      [...porId.values()]
+        .filter((u) => u.activo && u.roles.some((r) => roles.includes(r)))
+        .map((u) => ({ id: u.id, nombreCompleto: u.nombreCompleto, roles: u.roles })),
   };
 }
 

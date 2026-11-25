@@ -205,17 +205,26 @@ export function crearEtapaRepositorioPg(pool: Pool): EtapaRepositorio {
         prioridad: EtapaDeTrabajo['orden']['prioridad'];
         estado_orden: EstadoOrden;
         fecha_compromiso: string;
+        requerimientos: Array<{ insumoId: number; codigo: string; nombre: string; unidad: string; requerida: string; consumida: string }>;
       }>(
+        // Supplies use the same projection as the order detail (OrdenRepositorio.obtener), D26.
         `SELECT e.id, e.secuencia, e.nombre, a.nombre AS area, e.instrucciones, e.estado, e.version,
                 e.duracion_estimada_horas AS duracion, e.iniciada_en,
                 o.id AS orden_id, o.codigo, o.titulo, o.prioridad, o.estado AS estado_orden,
-                to_char(o.fecha_compromiso, 'YYYY-MM-DD') AS fecha_compromiso
+                to_char(o.fecha_compromiso, 'YYYY-MM-DD') AS fecha_compromiso,
+                COALESCE(json_agg(json_build_object(
+                    'insumoId', i.id, 'codigo', i.codigo, 'nombre', i.nombre, 'unidad', i.unidad_medida,
+                    'requerida', r.cantidad_requerida::text, 'consumida', r.cantidad_consumida::text)
+                  ORDER BY i.id) FILTER (WHERE r.id IS NOT NULL), '[]') AS requerimientos
            FROM sgp.etapa_orden e
            JOIN sgp.orden_trabajo o ON o.id = e.orden_id
            JOIN sgp.area a          ON a.id = e.area_id
+           LEFT JOIN sgp.requerimiento_insumo r ON r.etapa_orden_id = e.id
+           LEFT JOIN sgp.insumo i               ON i.id = r.insumo_id
           WHERE e.responsable_id = $1
             AND e.estado IN ('PENDIENTE','DISPONIBLE','EN_CURSO','BLOQUEADA')
             AND o.estado = ANY($2::text[])
+          GROUP BY e.id, a.nombre, o.id
           ORDER BY CASE e.estado WHEN 'EN_CURSO' THEN 0 WHEN 'DISPONIBLE' THEN 1 WHEN 'BLOQUEADA' THEN 2 ELSE 3 END,
                    CASE o.prioridad WHEN 'URGENTE' THEN 0 WHEN 'ALTA' THEN 1 WHEN 'NORMAL' THEN 2 ELSE 3 END,
                    o.fecha_compromiso, o.codigo, e.secuencia
@@ -240,6 +249,14 @@ export function crearEtapaRepositorioPg(pool: Pool): EtapaRepositorio {
           estado: f.estado_orden,
           fechaCompromiso: f.fecha_compromiso,
         },
+        requerimientos: f.requerimientos.map((r) => ({
+          insumoId: r.insumoId,
+          codigo: r.codigo,
+          nombre: r.nombre,
+          unidad: r.unidad,
+          cantidadRequerida: Number(r.requerida),
+          cantidadConsumida: Number(r.consumida),
+        })),
       }));
     },
   };

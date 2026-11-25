@@ -47,6 +47,15 @@ export interface UsuarioRepositorio {
   registrarAccesoExitoso(id: string): Promise<boolean>;
   /** Stores the new hash and clears debe_cambiar_clave. */
   actualizarClave(id: string, passwordHash: string): Promise<void>;
+  /** Active users holding at least one of `roles`, by full name (D26). */
+  listarActivosConRoles(roles: readonly CodigoRol[]): Promise<Responsable[]>;
+}
+
+/** Person who can be assigned to a stage (D26): no credentials, no contact data. */
+export interface Responsable {
+  id: string;
+  nombreCompleto: string;
+  roles: CodigoRol[];
 }
 
 export interface Hasher {
@@ -365,6 +374,8 @@ export interface EtapaDeTrabajo {
   duracionEstimadaHoras: number;
   iniciadaEn: string | null;
   orden: { id: string; codigo: string; titulo: string; prioridad: Prioridad; estado: EstadoOrden; fechaCompromiso: string };
+  /** Supplies of the stage (D26): the operator declares consumptions and reports shortages from them. */
+  requerimientos: RequerimientoVista[];
 }
 
 export interface EtapaRepositorio {
