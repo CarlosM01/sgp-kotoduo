@@ -23,7 +23,11 @@ The full specification is `docs/roadmap.md`. Numbered references:
 | T0 | S1 | inline | done (local part) | 048c7e4 · RED→GREEN 3 tests, lint/typecheck OK, compose: 16 tables + 3 collections |
 | T1 | S2 | inline | done | commit "feat(db): add demo seed…" on `feat/f1-database` · clean `down -v`/`up`: 5 users, DEMO-01 (6 stages), Mongo event · volume 5000/30000 twice (idempotent) · E-06 8/8 rejected, E-07 4/4 rejected · D10 alert simulated (34 ≤ 40, rolled back) |
 | T2 | S3 | inline | done | 8b86442 + B1 fix commit on `feat/f2-api-seguridad` · unit 116, integration 29 (3 runs stable) · mutation check: lockout 5→6 and dcc bypass both caught · verifier: CP-07/08/09/24/28 + D12 PASS, CP-29 FAIL (B1) → fixed |
-| T3 | S4 | inline | pending | — |
+| T3 | S4 | inline | in progress | branch `feat/f3-ordenes-etapas` from `feat/f2-api-seguridad` |
+| T3a | S4 | inline | pending | domain: puedeTransicionar (CP-01/02), generarEtapas (CP-03), calcularFechaEstimada (CP-04), NuevaOrdenSchema (CP-06) |
+| T3b | S4 | inline | pending | GET /plantillas, POST /ordenes (CP-11), GET /ordenes, GET /ordenes/{id} |
+| T3c | S4 | inline | pending | PATCH /etapas/{id}/responsable, GET /mi-trabajo, POST /etapas/{id}/iniciar\|terminar (CP-12, CP-13, CP-19, CP-27) |
+| T3d | S4 | inline | pending | GET /panel over v_panel_ordenes (CP-18) |
 | T4 | S5 | inline | pending | — |
 | T5 | S6 | inline | pending | — |
 | T6 | S7 | inline | pending | — |
@@ -52,3 +56,4 @@ Remote items outside the agent's reach (need the user): GitHub repo + push, GitH
 - (superseded) Next: T3 (F3) — orders and stages, flows 2 and 3.
 - L14 (2026-11-25): follow-up b45f1c0 assessed high_risk (auth.ts) → consent "Revisar este cambio" (granted), lineage review-93554b35d259f1ee APPROVED and acknowledged. Its repeated WARNING (POSIX `NODE_ENV=production` in `npm start` breaks on Windows cmd.exe and overrides the deploy env) fixed in 8bd1dac: portable start script, production declared by the environment (F6 compose); pool test waits on the pool 'remove' event (still RED without the listener). 8bd1dac assessed medium / under_budget: no review, pending slice. Final verify on a clean tree: 4/4 PASS.
 - Next: T3 (F3) — orders and stages, flows 2 and 3. Pending user: push branches, merge F1/F2 into main, assumptions 1/5/12 of §3.
+- L15 (2026-11-25): "Sí, empieza F3" / "Continúa con la siguiente etapa del roadmap". Scope from ES2 Table 9.x: CP-01/02 mirror the DDL triggers; CP-04 = ceil(hours/8) working days counted from the registration day (Mon 23 h → Wed), Chile calendar date; CP-12 consumptions and the ETAPA_DISPONIBLE notification belong to F4 / excluded notifications; CP-18 "Verificador de atrasos" excluded with notifications (panel reads `en_riesgo` from the stored estimate). CP-27: Table 7.1 "Avanzar etapas" is ◐ for every role → only the assigned responsable may start/finish; other stages answer 404 and log ACCESO_DENEGADO. Order code: next number per year under `pg_advisory_xact_lock`. Optimistic lock: order row then stage row locked FOR UPDATE, version compared in the use case (409). Risk: item 4 (concurrency) → independent verifier at the end of F3.
