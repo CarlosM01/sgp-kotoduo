@@ -1,6 +1,9 @@
 // Ports used by the use cases. Infrastructure (PostgreSQL, MongoDB, Argon2,
 // JWT) implements them; tests can replace them with in-memory fakes.
+import type { EstadoEtapa, EstadoOrden, ResumenEtapas } from '../dominio/estados.js';
+import type { NuevaOrden, Prioridad } from '../dominio/nueva-orden.js';
 import type { CodigoRol } from '../dominio/permisos.js';
+import type { EtapaGenerada, PlantillaEtapa } from '../dominio/plantilla.js';
 
 /** Authenticated identity, always taken from the verified token, never from the request body. */
 export interface Actor {
@@ -109,4 +112,187 @@ export interface Auditoria {
   /** Best effort: an audit failure is logged but never breaks the user's action. */
   registrar(evento: NuevoEvento): Promise<void>;
   listar(filtro: FiltroBitacora): Promise<EventoBitacora[]>;
+}
+
+// ---------------------------------------------------------------------------
+// Flows 2 and 3: work orders, stages and panel (F3).
+// Dates are calendar dates 'YYYY-MM-DD'; instants are ISO strings.
+
+export interface EtapaPlantillaVista extends PlantillaEtapa {
+  area: string;
+}
+
+export interface TipoTrabajoVista {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  horasTotales: number;
+  etapas: EtapaPlantillaVista[];
+}
+
+export interface OrdenAPersistir {
+  datos: NuevaOrden;
+  etapas: EtapaGenerada[];
+  fechaEstimadaTermino: string;
+  creadoPor: string;
+  /** Year of the code OT-AAAA-NNNN (registration date in the business time zone). */
+  anio: number;
+}
+
+export interface OrdenResumen {
+  id: string;
+  codigo: string;
+  titulo: string;
+  tipoTrabajo: string;
+  referenciaCliente: string;
+  cantidad: number;
+  prioridad: Prioridad;
+  estado: EstadoOrden;
+  fechaCompromiso: string;
+  fechaEstimadaTermino: string | null;
+  creadoEn: string;
+}
+
+export interface RequerimientoVista {
+  insumoId: number;
+  codigo: string;
+  nombre: string;
+  unidad: string;
+  cantidadRequerida: number;
+  cantidadConsumida: number;
+}
+
+export interface EtapaVista {
+  id: string;
+  secuencia: number;
+  nombre: string;
+  area: string;
+  instrucciones: string;
+  estado: EstadoEtapa;
+  responsable: { id: string; nombreCompleto: string } | null;
+  duracionEstimadaHoras: number;
+  esEtapaDiseno: boolean;
+  version: number;
+  iniciadaEn: string | null;
+  terminadaEn: string | null;
+  requerimientos: RequerimientoVista[];
+}
+
+export interface OrdenDetalle extends OrdenResumen {
+  tipoTrabajoId: number;
+  descripcion: string | null;
+  especificaciones: Record<string, unknown>;
+  creadoPor: { id: string; nombreCompleto: string };
+  terminadaEn: string | null;
+  etapas: EtapaVista[];
+}
+
+export interface Pagina<T> {
+  datos: T[];
+  total: number;
+  pagina: number;
+  tamano: number;
+}
+
+export interface FiltroOrdenes {
+  estado?: EstadoOrden | undefined;
+  /** Text searched in the code and the title. */
+  q?: string | undefined;
+  pagina: number;
+  tamano: number;
+}
+
+export const FILTROS_PANEL = ['activas', 'atrasadas', 'en_riesgo', 'todas'] as const;
+export type FiltroPanel = (typeof FILTROS_PANEL)[number];
+
+export interface FilaPanel {
+  id: string;
+  codigo: string;
+  titulo: string;
+  tipoTrabajo: string;
+  estado: EstadoOrden;
+  prioridad: Prioridad;
+  fechaCompromiso: string;
+  fechaEstimadaTermino: string | null;
+  etapaActual: string | null;
+  areaActual: string | null;
+  responsableActual: string | null;
+  porcentajeAvance: number;
+  enRiesgo: boolean;
+  atrasada: boolean;
+}
+
+export interface ResumenPanel {
+  activas: number;
+  atrasadas: number;
+  enRiesgo: number;
+}
+
+export interface OrdenRepositorio {
+  listarPlantillas(): Promise<TipoTrabajoVista[]>;
+  /** Stages of an active work type with their supplies; null when the type does not exist or is inactive. */
+  plantillaDe(tipoTrabajoId: number): Promise<PlantillaEtapa[] | null>;
+  /** Inserts the order, its stages and requirements in one transaction and assigns the next code of the year. */
+  crear(orden: OrdenAPersistir): Promise<{ id: string; codigo: string }>;
+  listar(filtro: FiltroOrdenes): Promise<{ datos: OrdenResumen[]; total: number }>;
+  obtener(id: string): Promise<OrdenDetalle | null>;
+  panel(filtro: { filtro: FiltroPanel; q?: string | undefined; pagina: number; tamano: number }): Promise<{ datos: FilaPanel[]; total: number }>;
+  resumenPanel(): Promise<ResumenPanel>;
+}
+
+/** Stage locked for update, together with its order (order row locked first). */
+export interface EtapaBloqueada {
+  id: string;
+  ordenId: string;
+  secuencia: number;
+  nombre: string;
+  estado: EstadoEtapa;
+  version: number;
+  responsableId: string | null;
+  estadoOrden: EstadoOrden;
+}
+
+export interface SiguienteEtapa {
+  id: string;
+  nombre: string;
+  area: string;
+  responsableId: string | null;
+}
+
+/** Unit of work over one stage: every call runs in the same transaction. */
+export interface TransaccionEtapa {
+  readonly etapa: EtapaBloqueada;
+  /** Returns the new version (the DDL trigger increments it). */
+  cambiarEstado(hacia: EstadoEtapa): Promise<number>;
+  /** Returns the new version. */
+  asignarResponsable(responsableId: string): Promise<number>;
+  /** Moves the first PENDIENTE stage after this one to DISPONIBLE (OMITIDA stages are skipped). */
+  habilitarSiguiente(): Promise<SiguienteEtapa | null>;
+  resumenEtapas(): Promise<ResumenEtapas>;
+  /** Also sets terminada_en when the order reaches TERMINADA. */
+  cambiarEstadoOrden(hacia: EstadoOrden): Promise<void>;
+}
+
+export interface EtapaDeTrabajo {
+  id: string;
+  secuencia: number;
+  nombre: string;
+  area: string;
+  instrucciones: string;
+  estado: EstadoEtapa;
+  version: number;
+  duracionEstimadaHoras: number;
+  iniciadaEn: string | null;
+  orden: { id: string; codigo: string; titulo: string; prioridad: Prioridad; estado: EstadoOrden; fechaCompromiso: string };
+}
+
+export interface EtapaRepositorio {
+  /**
+   * Runs `trabajo` in a transaction with the stage and its order locked
+   * (FOR UPDATE). `trabajo` receives null when the stage does not exist.
+   * A thrown error rolls everything back.
+   */
+  enTransaccion<T>(etapaId: string, trabajo: (tx: TransaccionEtapa | null) => Promise<T>): Promise<T>;
+  /** Open stages assigned to the user, in active orders, most urgent first. */
+  deResponsable(usuarioId: string): Promise<EtapaDeTrabajo[]>;
 }

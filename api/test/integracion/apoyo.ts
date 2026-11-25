@@ -2,6 +2,7 @@
 // seed users of the demo are never modified, and everything is removed after.
 import { randomUUID } from 'node:crypto';
 import type { Express } from 'express';
+import request from 'supertest';
 import { createApp, type AppOptions } from '../../src/app.js';
 import { leerConfig } from '../../src/config.js';
 import { crearContenedor, type Contenedor } from '../../src/contenedor.js';
@@ -21,6 +22,8 @@ export interface Entorno {
   contenedor: Contenedor;
   app(limites?: AppOptions['limites']): Express;
   crearUsuario(rol: CodigoRol, opciones?: { debeCambiarClave?: boolean }): Promise<UsuarioPrueba>;
+  /** Creates a user with the role and returns it with a valid access token. */
+  sesion(rol: CodigoRol): Promise<UsuarioPrueba & { token: string }>;
   eventosDe(usuarioId: string): Promise<Array<{ tipo: string; payload: Record<string, unknown>; actor: { ip?: string } }>>;
   usuario(id: string): Promise<{ intentos_fallidos: number; bloqueado_hasta: Date | null; debe_cambiar_clave: boolean; password_hash: string }>;
   limpiar(): Promise<void>;
@@ -35,7 +38,7 @@ export async function prepararEntorno(): Promise<Entorno> {
   const inicio = new Date();
   const silencioso = { error: () => {}, warn: () => {} };
 
-  return {
+  const entorno: Entorno = {
     contenedor,
 
     app(limites = { authPorMinuto: 10_000, apiPorMinuto: 10_000 }) {
@@ -56,6 +59,15 @@ export async function prepararEntorno(): Promise<Entorno> {
       );
       creados.push(id);
       return { id, nombreUsuario, clave: CLAVE_PRUEBA };
+    },
+
+    async sesion(rol) {
+      const u = await entorno.crearUsuario(rol);
+      const res = await request(entorno.app())
+        .post('/api/v1/auth/login')
+        .send({ nombreUsuario: u.nombreUsuario, clave: u.clave });
+      if (res.status !== 200) throw new Error(`login failed for the test user: ${res.status}`);
+      return { ...u, token: res.body.accessToken as string };
     },
 
     async eventosDe(usuarioId) {
@@ -80,10 +92,14 @@ export async function prepararEntorno(): Promise<Entorno> {
             { 'payload.nombre_usuario': { $regex: '^t\\.' } },
           ],
         });
+        // Orders created by test users go first (creado_por is ON DELETE RESTRICT);
+        // their stages and requirements are removed by ON DELETE CASCADE.
+        await pool.query(`DELETE FROM sgp.orden_trabajo WHERE creado_por = ANY($1::uuid[])`, [creados]);
         await pool.query(`DELETE FROM sgp.usuario WHERE id = ANY($1::uuid[])`, [creados]);
       } finally {
         await contenedor.cerrar();
       }
     },
   };
+  return entorno;
 }

@@ -3,14 +3,19 @@ import express, { type Express } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
 import type { ServicioAuth } from './aplicacion/auth.js';
+import type { ServicioEtapas } from './aplicacion/etapas.js';
+import type { ServicioOrdenes } from './aplicacion/ordenes.js';
 import { ErrorDemasiadasSolicitudes } from './aplicacion/errores.js';
 import type { Auditoria, ServicioTokens } from './aplicacion/puertos.js';
 import { asignarRequestId, crearManejadorErrores, noEncontrado } from './infraestructura/http/manejo-errores.js';
 import { crearRegistroRutas, type RutaDeclarada } from './infraestructura/http/registro-rutas.js';
+import { registrarRutasOrdenes } from './infraestructura/http/rutas-ordenes.js';
 import { registrarRutas } from './infraestructura/http/rutas.js';
 
 export interface Servicios {
   auth: ServicioAuth;
+  ordenes: ServicioOrdenes;
+  etapas: ServicioEtapas;
   tokens: ServicioTokens;
   auditoria: Auditoria;
 }
@@ -60,6 +65,7 @@ export function crearApi(options: AppOptions): Api {
   const router = express.Router();
   const registro = crearRegistroRutas(router, options.servicios);
   registrarRutas(registro, options.servicios);
+  registrarRutasOrdenes(registro, options.servicios);
   app.use('/api/v1', router);
 
   app.use(noEncontrado);

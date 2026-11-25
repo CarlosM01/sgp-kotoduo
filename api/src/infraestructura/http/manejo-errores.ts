@@ -24,9 +24,9 @@ const RESPUESTAS_BODY_PARSER: Record<string, { status: number; code: string; mes
 
 // PostgreSQL integrity violations: CHECK, FOREIGN KEY, UNIQUE, NOT NULL.
 const CODIGOS_INTEGRIDAD_PG = new Set(['23514', '23503', '23505', '23502']);
-// PostgreSQL rejected the value itself (NUL byte, invalid text for the type): defense in depth
+// PostgreSQL rejected the value itself (NUL byte in text or jsonb, invalid text for the type): defense in depth
 // for inputs a schema let through.
-const CODIGOS_DATO_INVALIDO_PG = new Set(['22021', '22P02']);
+const CODIGOS_DATO_INVALIDO_PG = new Set(['22021', '22P02', '22P05']);
 
 function campo(err: unknown, nombre: string): unknown {
   return typeof err === 'object' && err !== null ? (err as Record<string, unknown>)[nombre] : undefined;

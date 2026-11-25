@@ -279,7 +279,7 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 | POST | `/api/v1/etapas/{id}/terminar` | Operario (dueño) | CP-12, CP-13, CP-19, CP-27 |
 | GET | `/api/v1/insumos` | Encargada | — |
 | GET, POST | `/api/v1/alertas` | GET: Encargada · POST: Operario | CP-14, CP-15, CP-25 |
-| GET | `/api/v1/panel` | Encargada, Admin | CP-18, CP-23 |
+| GET | `/api/v1/panel` | Encargada, Admin, Vendedor (`panel.ver`, Tabla 7.1) | CP-18, CP-23 |
 | GET | `/api/v1/bitacora` | Admin | CP-28 |
 
 ---

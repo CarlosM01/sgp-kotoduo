@@ -66,3 +66,10 @@ export class ErrorConflicto extends ErrorAplicacion {
     super(409, 'CONFLICT', mensaje);
   }
 }
+
+/** Optimistic lock (CP-19): the client sent a stale version of the stage. */
+export class ErrorVersion extends ErrorConflicto {
+  constructor() {
+    super('La etapa fue modificada por otra persona; recargue e intente de nuevo');
+  }
+}
