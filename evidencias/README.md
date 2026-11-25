@@ -15,4 +15,4 @@
 
 ## Ejecuciones de verificación
 
-`ejecuciones/` guarda los logs de `npm run verify` (lint, typecheck y tests), uno por ejecución: `verify_<fecha>_<hora>_<commit>.log`. Desde E-04 el proyecto dejó de usar CI en GitHub Actions; la verificación se ejecuta en local y estos logs son su evidencia (3.1.5.10). No se borran logs con fallos: si una corrección arregla un fallo, se agrega una nueva ejecución.
+`ejecuciones/` guarda los logs de `npm run verify` (lint, typecheck y tests), uno por ejecución: `verify_<fecha>_<hora>_<commit>.log`. El 2026-11-24, después de F1, el proyecto dejó de usar CI en GitHub Actions: la rúbrica de la ES3 no lo exige y los runs quedaban bloqueados por facturación de la cuenta (E-04). La verificación se ejecuta en local y estos logs son su evidencia (3.1.5.10). Las rutas locales aparecen como `<repo>` y `~`. No se borran logs con fallos: si una corrección arregla un fallo, se agrega una nueva ejecución.
