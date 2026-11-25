@@ -1,6 +1,12 @@
 // Use cases of flow 3 (HU-01, HU-02; CU-05, CU-06): "Mi Trabajo" and the
 // start/finish of a stage by its responsible person.
-import { puedeTransicionarEtapa, puedeTransicionarOrden, type EstadoEtapa, type EstadoOrden } from '../dominio/estados.js';
+import {
+  ESTADOS_ORDEN_ACTIVOS,
+  puedeTransicionarEtapa,
+  puedeTransicionarOrden,
+  type EstadoEtapa,
+  type EstadoOrden,
+} from '../dominio/estados.js';
 import { ErrorConflicto, ErrorNoEncontrado, ErrorVersion } from './errores.js';
 import type {
   Actor,
@@ -69,6 +75,11 @@ export function crearServicioEtapas({ etapas, auditoria }: Dependencias): Servic
       const { etapa } = tx;
       if (etapa.responsableId !== actor.id) return { tipo: 'ajena', ordenId: etapa.ordenId };
       if (etapa.version !== version) throw new ErrorVersion();
+      // The DDL trigger lets a stage of a cancelled order start; the API does
+      // not: only active orders (not finished, delivered or cancelled) advance.
+      if (!ESTADOS_ORDEN_ACTIVOS.includes(etapa.estadoOrden)) {
+        throw new ErrorConflicto(`La orden está ${etapa.estadoOrden}: no se puede avanzar la etapa`);
+      }
       if (!puedeTransicionarEtapa(etapa.estado, hacia, etapa.estadoOrden)) {
         throw new ErrorConflicto(mensajeTransicion(etapa, hacia));
       }
@@ -95,7 +106,8 @@ export function crearServicioEtapas({ etapas, auditoria }: Dependencias): Servic
     async miTrabajo(actor) {
       const lista = await etapas.deResponsable(actor.id);
       const siguiente =
-        lista.find((e) => e.estado === 'EN_CURSO') ??
+        // An order on hold cannot advance, so none of its stages is the next activity.
+        lista.find((e) => e.estado === 'EN_CURSO' && e.orden.estado !== 'DETENIDA') ??
         lista.find((e) => e.estado === 'DISPONIBLE' && e.orden.estado !== 'DETENIDA') ??
         null;
       return { siguiente, etapas: lista };

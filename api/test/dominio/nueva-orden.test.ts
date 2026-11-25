@@ -45,12 +45,14 @@ describe('CP-06: work order validation (HU-05 / CU-04)', () => {
     ['specifications as an array', { especificaciones: ['S', 'M'] }, 'especificaciones'],
     ['NUL inside the specifications', { especificaciones: { color: 'azul\u0000' } }, 'especificaciones'],
     ['missing template', { tipoTrabajoId: undefined }, 'tipoTrabajoId'],
+    ['specifications nested 9 levels deep', { especificaciones: { a: { b: { c: { d: { e: { f: { g: { h: { i: 1 } } } } } } } } } }, 'especificaciones'],
   ])('rejects %s', (_caso, cambio, campo) => {
     expect(fallaEn({ ...VALIDA, ...cambio })).toContain(campo);
   });
 
   it('trims the text fields and keeps the specifications object', () => {
     const r = NuevaOrdenSchema.parse({ ...VALIDA, titulo: '  Polerones 4°B  ', especificaciones: { tallas: { S: 5 } } });
+    expect(NuevaOrdenSchema.safeParse({ ...VALIDA, especificaciones: { a: { b: { c: { d: { e: { f: { g: { h: 1 } } } } } } } } }).success).toBe(true);
     expect(r.titulo).toBe('Polerones 4°B');
     expect(r.especificaciones).toEqual({ tallas: { S: 5 } });
   });

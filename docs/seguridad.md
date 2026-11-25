@@ -40,7 +40,7 @@ Cada ruta se declara en un registro con su regla de acceso ([`registro-rutas.ts`
 | GET | `/api/v1/bitacora` | `bitacora.ver`; la Encargada debe indicar `orden_id` | 401 / 403 / 400 |
 | GET | `/api/v1/plantillas` | `ordenes.crear` | 401 / 403 |
 | POST | `/api/v1/ordenes` | `ordenes.crear` | 401 / 403 / 400 |
-| GET | `/api/v1/ordenes`, `/api/v1/ordenes/{id}` | `ordenes.ver` | 401 / 403 / 400 / 404 |
+| GET | `/api/v1/ordenes`, `/api/v1/ordenes/{id}` | `ordenes.ver`; un `id` mal formado responde 400 (CP-24) | 401 / 403 / 400 / 404 |
 | PATCH | `/api/v1/etapas/{id}/responsable` | `etapas.gestionar`; el responsable debe tener `etapas.avanzar` | 401 / 403 / 400 / 404 / 409 |
 | GET | `/api/v1/mi-trabajo` | `etapas.avanzar`; solo las etapas propias | 401 / 403 |
 | POST | `/api/v1/etapas/{id}/iniciar`, `/terminar` | `etapas.avanzar` + ser el responsable de la etapa (◐ de la Tabla 7.1 para todos los roles) | 401 / 403 / **404 si la etapa es ajena** / 409 |
@@ -66,7 +66,7 @@ Secuencia por solicitud protegida: token válido (401) → sin cambio de clave p
 | Cabeceras | Helmet: CSP `default-src 'none'`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy: no-referrer`, HSTS; sin `X-Powered-By` | `app.test.ts` |
 | CORS | Solo el origen de `CORS_ORIGIN` (cliente web) | `app.test.ts` |
 | Tamaño del cuerpo | Máximo 100 kB → 413 | `app.test.ts` |
-| Control de propiedad (IDOR, AM-05) | Iniciar o terminar exige `etapa.responsable_id = usuario del token`. Una etapa ajena responde el mismo 404 que una inexistente (no revela que existe), no cambia nada y registra `ACCESO_DENEGADO` con motivo `NO_ES_RESPONSABLE`. Los id mal formados también responden 404 | CP-27 |
+| Control de propiedad (IDOR, AM-05) | Iniciar o terminar exige `etapa.responsable_id = usuario del token`. Una etapa ajena responde el mismo 404 que una inexistente (no revela que existe), no cambia nada y registra `ACCESO_DENEGADO` con motivo `NO_ES_RESPONSABLE`. En las rutas de etapas, los id mal formados también responden 404; en `/ordenes/{id}` responden 400 por validación (CP-24, D22) | CP-27 |
 | Concurrencia en etapas | La transacción bloquea la fila de la OT y luego la de la etapa (`FOR UPDATE`, siempre en ese orden) y compara la `version` enviada por el cliente: dos "terminar" simultáneos dan un 200 y un 409, y la siguiente etapa se habilita una sola vez. El trigger de la base vuelve a validar la transición | CP-19 |
 | Bitácora (HU-12) | Eventos `LOGIN_EXITOSO`, `LOGIN_FALLIDO`, `CUENTA_BLOQUEADA`, `CLAVE_CAMBIADA`, `ACCESO_DENEGADO`, `ORDEN_REGISTRADA`, `ORDEN_ESTADO_CAMBIADO`, `ETAPA_ASIGNADA`, `ETAPA_INICIADA`, `ETAPA_TERMINADA` en `bitacora_eventos`, con IP y `request_id`. Nunca se guardan claves ni tokens | CP-09, CP-11, CP-13, CP-28 |
 
@@ -81,4 +81,7 @@ Secuencia por solicitud protegida: token válido (401) → sin cambio de clave p
 | Lista de claves comprometidas | Lista local corta | En producción, un corpus de claves filtradas |
 | Límite de tasa detrás de un proxy | `trust proxy` desactivado: correcto en local, pero detrás de Cloudflare todos los clientes compartirían el límite | Configurar `trust proxy` en el despliegue |
 | Tokens emitidos antes de un cambio de rol o una desactivación | Siguen vigentes hasta su vencimiento (10 min). §7.3 acepta ese plazo para roles, pero pide cerrar la sesión al desactivar | Se resuelve con la revocación de sesiones de D2; el MVP no tiene ruta para desactivar cuentas |
+| `fechaCompromiso` sin tope superior | Se acepta cualquier fecha futura válida (por ejemplo `9999-12-31`) | Sin impacto de seguridad; la Encargada la ve en el panel |
+| Asignar un responsable recién desactivado | La vigencia y el rol del responsable se revisan antes de la transacción; una desactivación en ese intervalo no se detecta | El MVP no tiene ruta para desactivar cuentas |
+| Número de OT reutilizado | El código es `MAX + 1` del año: si se borra la última OT, su número se repite | No hay ruta para borrar OT; solo la limpieza de pruebas las borra |
 | Nombre de usuario tecleado en `LOGIN_FALLIDO` | Se guarda para auditar intentos; si alguien escribe su clave en ese campo, queda en la bitácora | El formato del nombre (sin espacios, 3–40 caracteres) reduce el caso; la bitácora solo la lee el Administrador |

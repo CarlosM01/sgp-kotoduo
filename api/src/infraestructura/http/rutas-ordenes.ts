@@ -15,12 +15,18 @@ import { parsear } from './validar.js';
 // z.guid(): the seed uses fixed, non-RFC-4122 UUIDs (10000000-0000-0000-0000-000000000001).
 const IdSchema = z.guid();
 
-/** A malformed id answers 404 like an unknown one: ids are opaque to the client. */
-function idDe(req: Request): string {
+/**
+ * Stage ids: a malformed id answers the same 404 as a missing or foreign stage,
+ * so the response never tells them apart (CP-27).
+ */
+function idEtapaDe(req: Request): string {
   const r = IdSchema.safeParse(req.params.id);
   if (!r.success) throw new ErrorNoEncontrado();
   return r.data;
 }
+
+/** Order ids: a malformed id is rejected by validation with 400 (CP-24). */
+const idOrdenDe = (req: Request): string => parsear(z.object({ id: IdSchema }), { id: req.params.id }).id;
 
 const paginacion = {
   pagina: z.coerce.number().int().min(1).max(10_000).default(1),
@@ -54,11 +60,11 @@ export function registrarRutasOrdenes({ agregar }: ReturnType<typeof crearRegist
   });
 
   agregar('get', '/ordenes/:id', { tipo: 'permiso', permiso: 'ordenes.ver' }, async (req, res) => {
-    res.json(await ordenes.obtener(idDe(req)));
+    res.json(await ordenes.obtener(idOrdenDe(req)));
   });
 
   agregar('patch', '/etapas/:id/responsable', { tipo: 'permiso', permiso: 'etapas.gestionar' }, async (req, res) => {
-    const id = idDe(req);
+    const id = idEtapaDe(req);
     const datos = parsear(AsignarSchema, req.body);
     res.json(await ordenes.asignarResponsable(actorDe(res), id, datos, contextoDe(req, res)));
   });
@@ -68,13 +74,13 @@ export function registrarRutasOrdenes({ agregar }: ReturnType<typeof crearRegist
   });
 
   agregar('post', '/etapas/:id/iniciar', { tipo: 'permiso', permiso: 'etapas.avanzar' }, async (req, res) => {
-    const id = idDe(req);
+    const id = idEtapaDe(req);
     const { version } = parsear(VersionSchema, req.body);
     res.json(await etapas.iniciar(actorDe(res), id, version, contextoDe(req, res)));
   });
 
   agregar('post', '/etapas/:id/terminar', { tipo: 'permiso', permiso: 'etapas.avanzar' }, async (req, res) => {
-    const id = idDe(req);
+    const id = idEtapaDe(req);
     const { version } = parsear(VersionSchema, req.body);
     res.json(await etapas.terminar(actorDe(res), id, version, contextoDe(req, res)));
   });

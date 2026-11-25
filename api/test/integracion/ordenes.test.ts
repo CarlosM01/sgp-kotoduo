@@ -150,6 +150,15 @@ describe('CP-06 through the API: invalid orders store nothing', () => {
     expect(await contarConTitulo(cuerpo.titulo)).toBe(0);
   });
 
+  it('deeply nested specifications → 400, never a 500 (stack overflow)', async () => {
+    // ~3000 levels: still valid JSON for the body parser, deep enough to overflow a recursive validator.
+    let anidado: unknown = 'x';
+    for (let i = 0; i < 3000; i++) anidado = { a: anidado };
+    const res = await crear(nuevaOrden({ titulo: `${MARCA} · profunda`, especificaciones: { tallas: anidado } }));
+    expect(res.status).toBe(400);
+    expect(res.body.error.details).toEqual([{ campo: 'especificaciones', problema: 'custom' }]);
+  });
+
   it('a NUL character inside the specifications → 400, never a 500', async () => {
     const res = await crear(nuevaOrden({ titulo: `${MARCA} · nul`, especificaciones: { color: 'azul\u0000' } }));
     expect(res.status).toBe(400);
@@ -203,12 +212,17 @@ describe('templates and order queries', () => {
     ]);
   });
 
-  it.each([
-    ['unknown id', randomUUID()],
-    ['malformed id', 'not-a-uuid'],
-  ])('GET /ordenes/{%s} → 404', async (_caso, id) => {
-    const res = await request(entorno.app()).get(`/api/v1/ordenes/${id}`).auth(vendedor.token, { type: 'bearer' });
+  it('GET /ordenes/{unknown id} → 404', async () => {
+    const res = await request(entorno.app()).get(`/api/v1/ordenes/${randomUUID()}`).auth(vendedor.token, { type: 'bearer' });
     expect(res.status).toBe(404);
+  });
+
+  it.each(['not-a-uuid', encodeURIComponent('1;DROP TABLE x')])('CP-24: GET /ordenes/{%s} → 400 by validation', async (id) => {
+    const res = await request(entorno.app()).get(`/api/v1/ordenes/${id}`).auth(vendedor.token, { type: 'bearer' });
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: { code: 'VALIDATION_ERROR', message: 'Los datos enviados no son válidos', details: [{ campo: 'id', problema: 'invalid_format' }] },
+    });
   });
 
   it('CP-24: the text filter is a parameter, never SQL (LIKE wildcards are literal)', async () => {

@@ -134,6 +134,18 @@ describe('HU-01: Mi Trabajo', () => {
     expect(res.body.siguiente).toMatchObject({ id: etapas[0]!.id, estado: 'EN_CURSO' });
   });
 
+  it('a stage in progress of an order on hold is not the next activity', async () => {
+    const operarioC = await entorno.sesion('OPERARIO');
+    const { ordenId, etapas } = await ordenAsignada(operarioC);
+    await accion('iniciar', etapas[0]!.id, (await etapaEnBd(etapas[0]!.id)).version, operarioC);
+    await pool().query(`UPDATE sgp.orden_trabajo SET estado = 'DETENIDA' WHERE id = $1`, [ordenId]);
+
+    const res = await request(api()).get('/api/v1/mi-trabajo').auth(operarioC.token, { type: 'bearer' });
+
+    expect(res.body.etapas.map((e: { id: string }) => e.id)).toContain(etapas[0]!.id);
+    expect(res.body.siguiente).toBeNull();
+  });
+
   it('VENDEDOR → 403', async () => {
     const res = await request(api()).get('/api/v1/mi-trabajo').auth(vendedor.token, { type: 'bearer' });
     expect(res.status).toBe(403);
@@ -163,6 +175,18 @@ describe('HU-02: start a stage', () => {
 
     expect(res.status).toBe(409);
     expect(await etapaEnBd(etapas[1]!.id)).toEqual(antes);
+  });
+
+  it('a stage of a cancelled order cannot start → 409 and nothing changes', async () => {
+    const { ordenId, etapas } = await ordenAsignada(operarioA);
+    await pool().query(`UPDATE sgp.orden_trabajo SET estado = 'ANULADA' WHERE id = $1`, [ordenId]);
+    const antes = await etapaEnBd(etapas[0]!.id);
+
+    const res = await accion('iniciar', etapas[0]!.id, antes.version, operarioA);
+
+    expect(res.status).toBe(409);
+    expect(await etapaEnBd(etapas[0]!.id)).toEqual(antes);
+    expect((await ordenEnBd(ordenId)).estado).toBe('ANULADA');
   });
 
   it('with the order DETENIDA a stage cannot finish → 409', async () => {
