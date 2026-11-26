@@ -8,6 +8,9 @@ import { SpriteIconos } from '../compartido/iconos';
 import { useSesion } from '../compartido/sesion';
 import { useTitulo } from '../compartido/ui';
 import { RutaProtegida } from '../marco/RutaProtegida';
+import { DetalleOrden } from '../ordenes/DetalleOrden';
+import { ListaOrdenes } from '../ordenes/ListaOrdenes';
+import { NuevaOrden } from '../ordenes/NuevaOrden';
 
 function Inicio() {
   const sesion = useSesion();
@@ -33,6 +36,18 @@ export function Rutas() {
       <Route path="/" element={<Inicio />} />
       <Route path="/ingresar" element={<Ingresar />} />
       <Route path="/cambiar-clave" element={<CambiarClave />} />
+      <Route
+        path="/ordenes"
+        element={<RutaProtegida regla={REGLAS.ordenes} titulo="Órdenes">{(s) => <ListaOrdenes sesion={s} />}</RutaProtegida>}
+      />
+      <Route
+        path="/ordenes/nueva"
+        element={<RutaProtegida regla={REGLAS.nueva} titulo="Nueva orden" volver="/ordenes">{() => <NuevaOrden />}</RutaProtegida>}
+      />
+      <Route
+        path="/ordenes/:id"
+        element={<RutaProtegida regla={REGLAS.ordenes} titulo="Detalle de orden" volver="/ordenes">{(s) => <DetalleOrden sesion={s} />}</RutaProtegida>}
+      />
       <Route
         path="*"
         element={
