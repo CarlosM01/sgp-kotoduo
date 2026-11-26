@@ -1,0 +1,102 @@
+SGP-Kotoduo - verification run
+Date:        2026-11-26 18:52:14 local (2026-11-26T21:52:14.270Z UTC)
+Branch:      feat/f7-pruebas
+Commit:      259c985
+Dirty tree:  no
+Node:        v24.22.2
+OS:          Linux 7.0.0-44-generic (x64)
+
+===== lint: npm run lint =====
+
+> lint
+> npm run lint --workspaces --if-present
+
+
+> lint
+> eslint .
+
+
+> lint
+> eslint .
+
+----- lint: exit 0 (8.0s) -----
+
+===== typecheck: npm run typecheck =====
+
+> typecheck
+> npm run typecheck --workspaces --if-present
+
+
+> typecheck
+> tsc --noEmit
+
+
+> typecheck
+> tsc --noEmit
+
+----- typecheck: exit 0 (10.7s) -----
+
+===== test: npm test =====
+
+> test
+> npm run test --workspaces --if-present
+
+
+> test
+> vitest run
+
+
+ RUN  v5.1.2 <repo>/api
+
+
+ Test Files  13 passed (13)
+      Tests  206 passed (206)
+   Start at  18:52:34
+   Duration  1.36s (import 73%, tests 13%, transform 10%, worker 4%)
+
+
+> test
+> vitest run
+
+
+ RUN  v5.1.2 <repo>/web
+
+Not implemented: Window's scrollTo() method
+
+ Test Files  9 passed (9)
+      Tests  49 passed (49)
+   Start at  18:52:36
+   Duration  4.76s (environment 55%, tests 21%, import 11%, setup 10%, transform 2%)
+
+----- test: exit 0 (7.7s) -----
+
+===== test:integracion: npm run test:integracion =====
+
+> test:integracion
+> npm run test:integracion --workspaces --if-present
+
+
+> test:integracion
+> vitest run -c vitest.integracion.config.ts
+
+
+ RUN  v5.1.2 <repo>/api
+
+
+ Test Files  9 passed (9)
+      Tests  102 passed (102)
+   Start at  18:52:41
+   Duration  22.63s (tests 75%, import 22%, transform 2%, setup 1%)
+
+    Isolate  9 workers spawned · ~179ms startup each (spawn + environment, per file)
+             at least ~1.43s faster with isolate: false — reuses workers across files instead of one per file
+
+----- test:integracion: exit 0 (23.6s) -----
+
+===== Summary =====
+PASS  lint             exit 0  8.0s
+PASS  typecheck        exit 0  10.7s
+PASS  test             exit 0  7.7s
+PASS  test:integracion exit 0  23.6s
+Result: all steps passed
+Log: evidencias/ejecuciones/verify_2026-11-26_185214_259c985.log

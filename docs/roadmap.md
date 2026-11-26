@@ -189,12 +189,12 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ### F7 — Ejecución y validación de pruebas · criterios 3.1.5 y 3.1.6
 
-- [ ] **Congelar una versión** (tag `v0.9`) y ejecutar el protocolo sobre ella.
-- [ ] Actualizar el plan de ES2 al MVP: matriz HU–CU–CP con alcance y exclusiones (§5).
-- [ ] Calcular la cobertura con denominador explícito ("X CU cubiertos de Y implementados").
-- [ ] Ejecutar cada CP con una ficha: precondiciones, datos, pasos, esperado, **obtenido (observado de verdad)**, fecha, versión, estado.
-- [ ] Estados permitidos: Aprobado / Fallido / Bloqueado / No ejecutado.
-- [ ] Cada fallo genera un `DEF-xx` con causa: hipótesis o confirmada.
+- [x] **Congelar una versión** (tag `v0.9`) y ejecutar el protocolo sobre ella. _`v0.9` = `df19bbc`; 26 CP ejecutados._
+- [x] Actualizar el plan de ES2 al MVP: matriz HU–CU–CP con alcance y exclusiones (§5). _`docs/plan-pruebas.md`._
+- [x] Calcular la cobertura con denominador explícito ("X CU cubiertos de Y implementados"). _9 de 10 CU; CU-12 sin CP en ES2._
+- [x] Ejecutar cada CP con una ficha: precondiciones, datos, pasos, esperado, **obtenido (observado de verdad)**, fecha, versión, estado. _`evidencias/ejecuciones/fichas/`._
+- [x] Estados permitidos: Aprobado / Fallido / Bloqueado / No ejecutado.
+- [x] Cada fallo genera un `DEF-xx` con causa: hipótesis o confirmada. _DEF-01 a DEF-03, causas confirmadas._
 - [ ] Corregir, publicar `v1.0` y **re-ejecutar sin borrar la ejecución fallida**.
 - [ ] Resumen numérico de estados, separando defectos críticos de menores.
 - [ ] Tabla de recomendaciones: hallazgo → acción → cómo verificar. Separar las corregidas de las propuestas para una versión futura.
