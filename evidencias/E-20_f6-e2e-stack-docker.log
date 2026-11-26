@@ -1,0 +1,14 @@
+# E2E de los 4 flujos contra el stack de Docker (nginx, NODE_ENV=production)
+Fecha: 2026-11-26 17:19:54 -03 · commit 743864d · stack levantado desde el clon limpio (E-19)
+$ E2E_BASE_URL=http://localhost:8080 E2E_EVIDENCIAS=<scratch> npm run test:e2e -w web
+
+> test:e2e
+> playwright test
+
+
+Running 1 test using 1 worker
+
+  ✓  1 e2e/flujos.spec.ts:29:1 › flows 1–4 from the browser: create, assign, advance, panel and supply alert (7.4s)
+
+  1 passed (8.5s)
+[exit 0]

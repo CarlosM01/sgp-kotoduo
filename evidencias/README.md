@@ -20,6 +20,9 @@
 | E-16 | `E-16_f5-panel-avance.png` | El panel refleja el avance (50 %, etapa actual y responsable) tras 3 etapas | F5, flujo 3, HU-10 |
 | E-17 | `E-17_f5-insumos-alerta-manual.png` | Faltante reportado por el Operario visible para la Encargada en Insumos | F5, flujo 4, CP-15 |
 | E-18 | `E-18_f5-e2e-flujos.log` | Corrida E2E (Playwright) de los 4 flujos que generó E-11 a E-17 | F5, 3.1.5 |
+| E-19 | `E-19_f6-instalacion-clon-limpio.log` | Instalación desde un clon limpio siguiendo el README: `.env`, secreto, `docker compose up -d --build`, verificación con `DEMO-01` en la interfaz, PostgreSQL y MongoDB, rechazo del secreto de ejemplo en producción, búsqueda de rutas personales y secretos, y build sin caché | F6, 3.1.4 |
+| E-20 | `E-20_f6-e2e-stack-docker.log` | E2E de los 4 flujos contra el stack de Docker (nginx, `NODE_ENV=production`) levantado en E-19 | F6, 3.1.4, 3.1.5 |
+| E-21 | `E-21_f6-panel-stack-docker.png` | Panel servido por nginx en `http://localhost:8080` durante E-20, sobre una base recién creada | F6, 3.1.4 |
 
 ## Ejecuciones de verificación
 

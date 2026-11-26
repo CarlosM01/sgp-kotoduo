@@ -178,11 +178,11 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ### F6 — Entorno y documentación · criterio 3.1.4
 
-- [ ] `docker-compose.yml` del stack completo: `postgres`, `mongo`, `api`, `web`. El servicio `api` fija `NODE_ENV=production` (hallazgo R1-001 de la revisión de F3).
-- [ ] `README.md` de instalación: SO probado, versiones, comandos en orden, seed, verificación con `DEMO-01`, problemas conocidos.
-- [ ] Manual de usuario breve, por rol.
-- [ ] **Prueba desde un clon limpio**, idealmente hecha por un compañero. Registrar los pasos que generaron dudas, corregir y repetir (la guía 4.2 lo valora).
-- [ ] Sin rutas absolutas personales ni secretos.
+- [x] `docker-compose.yml` del stack completo: `postgres`, `mongo`, `api`, `web`. El servicio `api` fija `NODE_ENV=production` (hallazgo R1-001 de la revisión de F3). _`web` es nginx: sirve el build, reenvía `/api` y fija la CSP. La API no se publica y confía en un salto de proxy (`TRUST_PROXY=1`)._
+- [x] `README.md` de instalación: SO probado, versiones, comandos en orden, seed, verificación con `DEMO-01`, problemas conocidos.
+- [x] Manual de usuario breve, por rol. _`docs/manual-usuario.md`._
+- [x] **Prueba desde un clon limpio**, idealmente hecha por un compañero. Registrar los pasos que generaron dudas, corregir y repetir (la guía 4.2 lo valora). _Hecha en local por el autor siguiendo el README (E-19), con build sin caché y E2E de los 4 flujos sobre el stack (E-20, E-21). Falta la prueba por otra persona._
+- [x] Sin rutas absolutas personales ni secretos. _Búsqueda en E-19 §6: 0 coincidencias._
 
 **Salida:** instalación reproducible con su evidencia (registro de consola y capturas).
 
