@@ -29,19 +29,13 @@ export function DialogoTerminar({
   alConflicto: (e: ErrorApi) => void;
 }) {
   // Prefilled with what the stage still requires; the person corrects it.
-  const inicial = () =>
-    Object.fromEntries(etapa.requerimientos.map((r) => [r.insumoId, cantidadEditable(Math.max(r.cantidadRequerida - r.cantidadConsumida, 0))]));
-  const [valores, setValores] = useState<Record<number, string>>(inicial);
+  // The caller keys this dialog by stage and version, so the state starts fresh for each one.
+  const [valores, setValores] = useState<Record<number, string>>(() =>
+    Object.fromEntries(etapa.requerimientos.map((r) => [r.insumoId, cantidadEditable(Math.max(r.cantidadRequerida - r.cantidadConsumida, 0))])),
+  );
   const [errores, setErrores] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  const [etapaVista, setEtapaVista] = useState(`${etapa.id}#${etapa.version}`);
-  if (etapaVista !== `${etapa.id}#${etapa.version}`) {
-    setEtapaVista(`${etapa.id}#${etapa.version}`);
-    setValores(inicial());
-    setErrores({});
-    setError(null);
-  }
 
   async function confirmar() {
     const nuevos: Record<number, string> = {};

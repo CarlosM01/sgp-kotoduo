@@ -1,5 +1,6 @@
 // P-06 /panel (HU-10, CU-10): orders in progress with their current stage and
 // progress; each indicator filters the list (IK-7). Data from v_panel_ordenes.
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { puede } from '../compartido/acceso';
 import { api } from '../compartido/api';
@@ -48,7 +49,9 @@ export function Panel({ sesion }: { sesion: SesionCliente }) {
   const [params, setParams] = useSearchParams();
   const filtro = (['activas', 'atrasadas', 'en_riesgo'].includes(params.get('filtro') ?? '') ? params.get('filtro') : 'activas') as Filtro;
   const pagina = Math.max(1, Number(params.get('pagina')) || 1);
-  const consulta = `filtro=${filtro}&pagina=${pagina}&tamano=${TAMANO}`;
+  const q = params.get('q') ?? '';
+  const [texto, setTexto] = useState(q);
+  const consulta = new URLSearchParams({ filtro, pagina: String(pagina), tamano: String(TAMANO), ...(q ? { q } : {}) }).toString();
   const carga = useCarga(
     (senal) => api<Pagina<FilaPanel> & { resumen: ResumenPanel }>(`/panel?${consulta}`, { senal }).then((d) => ({ ...d, en: new Date() })),
     consulta,
@@ -56,7 +59,11 @@ export function Panel({ sesion }: { sesion: SesionCliente }) {
   const gestionaInsumos = puede(sesion.usuario.roles, 'insumos.gestionar');
   const datos = carga.datos;
   const paginas = datos ? Math.max(1, Math.ceil(datos.total / TAMANO)) : 1;
-  const ir = (cambios: Record<string, string>) => setParams({ filtro, pagina: '1', ...cambios }, { replace: true });
+  const ir = (cambios: Record<string, string>) => {
+    const p: Record<string, string> = { filtro, pagina: '1', ...(q ? { q } : {}), ...cambios };
+    if (!p.q) delete p.q;
+    setParams(p, { replace: true });
+  };
 
   return (
     <>
@@ -98,6 +105,14 @@ export function Panel({ sesion }: { sesion: SesionCliente }) {
             )}
           </div>
 
+          <form className="filtros" role="search" onSubmit={(e) => { e.preventDefault(); ir({ q: texto.trim() }); }}>
+            <div>
+              <label htmlFor="panel-q">Buscar orden</label>
+              <input id="panel-q" type="search" placeholder="Código de OT o título" maxLength={60} value={texto}
+                onChange={(e) => setTexto(e.target.value)} onBlur={() => texto.trim() !== q && ir({ q: texto.trim() })} />
+            </div>
+          </form>
+
           {datos.resumen.alertasAbiertas > 0 ? (
             <Aviso tipo="alerta" icono="caja" titulo={`Hay ${datos.resumen.alertasAbiertas} ${datos.resumen.alertasAbiertas === 1 ? 'alerta' : 'alertas'} de insumo sin cerrar.`}>
               {gestionaInsumos ? <Link to="/insumos">Revisar insumos</Link> : 'La Encargada de Producción ya fue avisada.'}
@@ -110,7 +125,7 @@ export function Panel({ sesion }: { sesion: SesionCliente }) {
           </div>
 
           {datos.datos.length === 0 ? (
-            <EstadoVacio titulo={VACIOS[filtro]} icono="check" />
+            <EstadoVacio titulo={q ? 'Ninguna orden coincide con la búsqueda' : VACIOS[filtro]} icono="check" />
           ) : (
             <div className="tabla" aria-busy={carga.estado === 'cargando' || undefined}>
               <table className="responsive">

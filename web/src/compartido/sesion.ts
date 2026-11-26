@@ -85,6 +85,11 @@ export function sesionActual(): SesionCliente | null {
   return actual;
 }
 
+/** Reason of the last close, without forgetting it. */
+export function motivoCierre(): MotivoCierre | null {
+  return motivo;
+}
+
 /** Returns and forgets the reason of the last close. */
 export function tomarMotivoCierre(): MotivoCierre | null {
   const m = motivo;

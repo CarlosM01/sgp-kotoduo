@@ -267,3 +267,6 @@ body.acceso { min-height: 100vh; display: grid; place-items: center; padding: 24
 /* Lista simple de insumos de una etapa */
 ul.insumos { margin: 6px 0 8px; padding-left: 20px; }
 ul.insumos li + li { margin-top: 4px; }
+/* React monta la app en #raiz: sin caja propia, así topbar, nav y main siguen
+   siendo hijos de body para el grid de escritorio de body.app */
+#raiz { display: contents; }

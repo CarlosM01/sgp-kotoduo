@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
 import { cargoDe, cumple, inicioDe, type Regla } from '../compartido/acceso';
 import { Icono } from '../compartido/iconos';
-import { useSesion, type SesionCliente } from '../compartido/sesion';
+import { motivoCierre, useSesion, type SesionCliente } from '../compartido/sesion';
 import { useTitulo } from '../compartido/ui';
 import { Marco } from './Marco';
 
@@ -23,7 +23,12 @@ export function RutaProtegida({
   const sesion = useSesion();
   const ubicacion = useLocation();
 
-  if (!sesion) return <Navigate to="/ingresar" replace state={{ desde: ubicacion.pathname + ubicacion.search }} />;
+  // Back to the same screen after logging in again, unless the person left on
+  // purpose: the next one to log in may be someone else with another role.
+  if (!sesion) {
+    const volverA = motivoCierre() === 'salida' ? null : { desde: ubicacion.pathname + ubicacion.search };
+    return <Navigate to="/ingresar" replace state={volverA} />;
+  }
   if (sesion.debeCambiarClave) return <Navigate to="/cambiar-clave" replace />;
 
   return (

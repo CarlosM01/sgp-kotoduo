@@ -141,7 +141,9 @@ export function MiTrabajo({ sesion }: { sesion: SesionCliente }) {
             ) : null}
           </article>
 
+          {/* Keyed by stage and version: each stage gets fresh dialog state (its own supplies and quantities). */}
           <DialogoTerminar
+            key={`terminar-${siguiente.id}-${siguiente.version}`}
             abierto={dialogo === 'terminar'}
             etapa={siguiente}
             alCerrar={() => setDialogo(null)}
@@ -153,6 +155,7 @@ export function MiTrabajo({ sesion }: { sesion: SesionCliente }) {
             }}
           />
           <DialogoFaltante
+            key={`faltante-${siguiente.id}`}
             abierto={dialogo === 'faltante'}
             etapa={siguiente}
             alCerrar={() => setDialogo(null)}

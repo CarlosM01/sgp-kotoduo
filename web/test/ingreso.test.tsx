@@ -67,6 +67,46 @@ describe('login (HU-11, CU-01)', () => {
 });
 
 describe('route guard (UX; the API authorizes)', () => {
+  it('after "Salir" the next person logs in to their own home, not the previous screen', async () => {
+    sesionDe(['ENCARGADA_PRODUCCION']);
+    simularFetch((url) => {
+      if (url.endsWith('/auth/login')) return { status: 200, body: sesionApi(['OPERARIO']) };
+      if (url.endsWith('/mi-trabajo')) return { status: 200, body: { siguiente: null, etapas: [] } };
+      return { status: 200, body: { datos: [], total: 0, pagina: 1, tamano: 20, resumen: { activas: 0, atrasadas: 0, enRiesgo: 0, alertasAbiertas: 0 } } };
+    });
+    renderEn('/panel');
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Cerrar sesión' }));
+    await userEvent.type(await screen.findByLabelText('Usuario'), 'operario');
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'kotoduo demo local 2026');
+    await userEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+
+    expect(await screen.findByText('No tienes etapas pendientes')).toBeInTheDocument();
+  });
+
+  it('after an expired session the same person returns to the screen they were on', async () => {
+    sesionDe(['ENCARGADA_PRODUCCION']);
+    simularFetch((url) => {
+      if (url.endsWith('/auth/login')) return { status: 200, body: sesionApi(['ENCARGADA_PRODUCCION']) };
+      if (url.startsWith('/api/v1/alertas')) return { status: 200, body: { datos: [], total: 0, pagina: 1, tamano: 50 } };
+      if (url.endsWith('/insumos')) return { status: 401, body: { error: { code: 'UNAUTHENTICATED', message: 'Debe iniciar sesión' } } };
+      return { status: 200, body: { datos: [] } };
+    });
+    renderEn('/insumos');
+
+    expect(await screen.findByText('Tu sesión terminó. Ingresa de nuevo para continuar.')).toBeInTheDocument();
+    simularFetch((url) => {
+      if (url.endsWith('/auth/login')) return { status: 200, body: sesionApi(['ENCARGADA_PRODUCCION']) };
+      if (url.startsWith('/api/v1/alertas')) return { status: 200, body: { datos: [], total: 0, pagina: 1, tamano: 50 } };
+      return { status: 200, body: { datos: [] } };
+    });
+    await userEvent.type(screen.getByLabelText('Usuario'), 'encargada');
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'kotoduo demo local 2026');
+    await userEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+
+    expect(await screen.findByRole('heading', { name: 'Insumos' })).toBeInTheDocument();
+  });
+
   it('without a session a protected screen sends to the login', async () => {
     renderEn('/panel');
     expect(await screen.findByRole('heading', { name: 'Ingresar' })).toBeInTheDocument();

@@ -135,6 +135,30 @@ describe('flow 3: Mi Trabajo (HU-01, HU-02)', () => {
     expect(JSON.parse(post[1]!.body as string)).toEqual({ insumoId: 4, etapaId: 'e-2', comentario: 'No alcanza para las 30', cantidadFaltante: 0.5 });
   });
 
+  it('the shortage report uses the supplies of the current stage after the previous one is finished', async () => {
+    sesionDe(['OPERARIO']);
+    let terminada = false;
+    const sinInsumos = { ...etapa('EN_CURSO'), id: 'e-1', nombre: 'Diseño', requerimientos: [] };
+    const fetch = simularFetch((url) => {
+      if (url.endsWith('/terminar')) {
+        terminada = true;
+        return { status: 200, body: { etapaId: 'e-1', estado: 'TERMINADA', version: 6, siguienteEtapa: 'Impresión de transfer', area: 'Impresión', ordenTerminada: false, consumos: [], alertas: [] } };
+      }
+      if (url.endsWith('/alertas')) return { status: 201, body: { id: 13, insumoId: 3, etapaId: 'e-2', origen: 'MANUAL', estado: 'ABIERTA', creadaEn: '2026-11-25T13:00:00Z' } };
+      return { status: 200, body: miTrabajo(terminada ? etapa('DISPONIBLE') : sinInsumos) };
+    });
+    renderEn('/mi-trabajo');
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Terminar etapa' }));
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'Terminar etapa' })).getByRole('button', { name: 'Terminar' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Reportar faltante' }));
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'Reportar faltante' })).getByRole('button', { name: 'Enviar aviso' }));
+
+    expect(await screen.findByText('Faltante de Papel sublimación informado a la Encargada de Producción.')).toBeInTheDocument();
+    const post = fetch.mock.calls.find(([u]) => u === '/api/v1/alertas')!;
+    expect(JSON.parse(post[1]!.body as string)).toEqual({ insumoId: 3, etapaId: 'e-2' });
+  });
+
   it('without assigned stages shows the empty state', async () => {
     sesionDe(['OPERARIO']);
     simularFetch(() => ({ status: 200, body: miTrabajo(null) }));
@@ -174,6 +198,19 @@ describe('flow 3: panel (HU-10, CU-10)', () => {
     expect(fila).toHaveTextContent('60 %');
     expect(fila).toHaveTextContent('Atrasada');
     expect(fila).toHaveTextContent('Urgente');
+  });
+
+  it('the search narrows the panel through the API and keeps the indicator filter', async () => {
+    sesionDe(['ENCARGADA_PRODUCCION']);
+    const fetch = simularFetch((url) => ({ status: 200, body: panel(new URL(url, 'http://x').searchParams.get('filtro')!) }));
+    renderEn('/panel?filtro=en_riesgo');
+
+    await userEvent.type(await screen.findByLabelText('Buscar orden'), 'OT-2026-0002{Enter}');
+
+    expect(await screen.findByRole('heading', { name: 'Órdenes en riesgo' })).toBeInTheDocument();
+    const ultima = new URL(fetch.mock.calls.at(-1)![0], 'http://x').searchParams;
+    expect(ultima.get('q')).toBe('OT-2026-0002');
+    expect(ultima.get('filtro')).toBe('en_riesgo');
   });
 
   it('the Vendedor sees the supply alerts count but cannot open supplies', async () => {
