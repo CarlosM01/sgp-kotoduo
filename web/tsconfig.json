@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
@@ -12,11 +16,24 @@
     "allowImportingTsExtensions": false,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["vite/client", "@testing-library/jest-dom/vitest"],
+    "types": [
+      "vite/client",
+      "@testing-library/jest-dom/vitest"
+    ],
     "paths": {
-      "@dominio/*": ["../api/src/dominio/*"],
-      "@api/*": ["../api/src/*"]
+      "@dominio/*": [
+        "../api/src/dominio/*"
+      ],
+      "@api/*": [
+        "../api/src/*"
+      ]
     }
   },
-  "include": ["src", "test", "vite.config.ts"]
+  "include": [
+    "src",
+    "test",
+    "e2e",
+    "vite.config.ts",
+    "playwright.config.ts"
+  ]
 }

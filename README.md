@@ -18,6 +18,7 @@ docker compose up -d          # PostgreSQL + MongoDB con esquema
 npm install
 npm run verify                # lint, typecheck y tests, con log en evidencias/ejecuciones/
 npm run dev -w api            # API en http://localhost:3000/api/v1/health
+npm run dev -w web            # interfaz en http://localhost:5173 (reenvía /api a la API)
 ```
 
 La guía de instalación completa se escribe en F6.
@@ -36,8 +37,13 @@ Los pasos también se pueden correr por separado: `npm run lint`, `npm run typec
 
 | Suite | Carpeta | Necesita |
 |---|---|---|
-| Unitarias (`npm test`) | `api/test/` (salvo `integracion/`) | Nada: usan adaptadores en memoria |
+| Unitarias (`npm test`) | `api/test/` (salvo `integracion/`) y `web/test/` | Nada: usan adaptadores en memoria y un `fetch` simulado |
 | Integración (`npm run test:integracion`) | `api/test/integracion/` | `docker compose up -d` y el `.env`. Crean sus propios usuarios `t.*` y los borran al terminar; no modifican los usuarios de demo |
+| E2E (`npm run test:e2e -w web`) | `web/e2e/` | `docker compose up -d`, el `.env` y Google Chrome instalado (no descarga navegadores). Levanta la API y la interfaz si no están corriendo. Recorre los 4 flujos con los usuarios de demo y guarda capturas `E-11` a `E-17` en `evidencias/`. Cada corrida deja en la base de desarrollo su propia OT terminada y una alerta manual; no forma parte de `npm run verify` |
+
+## Interfaz web
+
+`npm run dev -w web` levanta la interfaz React en `http://localhost:5173`. El navegador solo habla con ese origen: Vite reenvía `/api` a la API (`VITE_API_URL`, por defecto `http://localhost:3000`). Entre con los usuarios de demo (`admin`, `encargada`, `vendedor`, `disenador`, `operario`; contraseña en `db/postgres/02_seed.sql`); cada rol llega a su pantalla de inicio. La sesión dura lo que el token (10 min) y se guarda solo en la pestaña (D27). `admin` debe cambiar su contraseña en el primer ingreso (D12).
 
 ## API
 

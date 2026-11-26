@@ -168,11 +168,11 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ### F5 — Frontend operativo · criterio 3.1.1
 
-- [ ] Migrar las 8 pantallas del MVP según D1, reutilizando `estilos.css` y los componentes del prototipo.
-- [ ] Guardas de ruta por rol en el cliente (solo UX; la autorización real está en la API).
-- [ ] Validaciones en los formularios con mensajes coherentes y estados de carga, error y vacío.
-- [ ] Consistencia: mismos botones, etiquetas, mensajes y forma de volver atrás entre "Nueva OT" y "Detalle OT".
-- [ ] Mobile-first: revisar 360 px (observación pendiente de ES2) y la navegación con teclado.
+- [x] Migrar las 8 pantallas del MVP según D1, reutilizando `estilos.css` y los componentes del prototipo.
+- [x] Guardas de ruta por rol en el cliente (solo UX; la autorización real está en la API).
+- [x] Validaciones en los formularios con mensajes coherentes y estados de carga, error y vacío.
+- [x] Consistencia: mismos botones, etiquetas, mensajes y forma de volver atrás entre "Nueva OT" y "Detalle OT".
+- [x] Mobile-first: revisar 360 px (observación pendiente de ES2) y la navegación con teclado.
 
 **Salida:** los 4 flujos completos desde el navegador, con el dato recuperado tras guardarlo.
 
