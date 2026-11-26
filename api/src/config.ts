@@ -11,6 +11,16 @@ const ConfigSchema = z.object({
   NODE_ENV: z.string().default('development'),
   /** Proxy hops in front of the API whose X-Forwarded-For is trusted (1 behind the compose nginx). */
   TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
+  /**
+   * PostgreSQL role every pooled session switches to (`-c role=...` at connect),
+   * e.g. sgp_app, the least-privilege role of the DDL (DEF-02). Unset: the
+   * login role of DATABASE_URL. A plain lowercase name only: it goes into the
+   * connection options.
+   */
+  DB_ROL: z
+    .string()
+    .regex(/^[a-z_][a-z0-9_]{0,62}$/, 'DB_ROL must be a lowercase PostgreSQL role name')
+    .optional(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

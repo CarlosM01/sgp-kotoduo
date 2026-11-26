@@ -61,6 +61,9 @@ services:
       CORS_ORIGIN: http://localhost:${WEB_PORT:-8080}
       # One proxy hop (the web container): client IP for rate limits and the audit log.
       TRUST_PROXY: 1
+      # Least privilege (DEF-02): every session switches to sgp_app, which cannot
+      # change the kardex or the outbox nor create objects (DDL grants, R7/R8).
+      DB_ROL: sgp_app
     depends_on:
       postgres:
         condition: service_healthy

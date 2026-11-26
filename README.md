@@ -172,6 +172,7 @@ La API no arranca si falta una variable o si `JWT_SECRET` tiene menos de 32 cara
 | `CORS_ORIGIN` | `http://localhost:5173` | Único origen web permitido |
 | `NODE_ENV` | `development` | `production` en el stack de Docker |
 | `TRUST_PROXY` | `0` | Saltos de proxy de confianza para la IP del cliente; `1` detrás de nginx |
+| `DB_ROL` | vacío | Rol de PostgreSQL al que cambia cada sesión de la API (`-c role=…`); el compose fija `sgp_app`, de mínimo privilegio (DEF-02) |
 
 Todas las rutas cuelgan de `/api/v1`. La autorización se decide en el servidor con la matriz de permisos de [docs/seguridad.md](docs/seguridad.md).
 

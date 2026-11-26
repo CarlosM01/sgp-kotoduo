@@ -23,10 +23,15 @@ export interface Contenedor {
   cerrar(): Promise<void>;
 }
 
-export async function crearContenedor(config: Pick<Config, 'DATABASE_URL' | 'MONGO_URL' | 'JWT_SECRET'>): Promise<Contenedor> {
+export async function crearContenedor(
+  config: Pick<Config, 'DATABASE_URL' | 'MONGO_URL' | 'JWT_SECRET'> & Partial<Pick<Config, 'DB_ROL'>>,
+): Promise<Contenedor> {
   // Business time zone: CURRENT_DATE (overdue orders in v_panel_ordenes) is the
   // Chilean calendar date, the same one the API uses for the estimated end date.
-  const pool = new pg.Pool({ connectionString: config.DATABASE_URL, max: 10, options: '-c TimeZone=America/Santiago' });
+  // DB_ROL (DEF-02): the role is a startup parameter, so a session never runs
+  // as the login role, and a missing role refuses the connection (fail closed).
+  const opciones = ['-c TimeZone=America/Santiago', ...(config.DB_ROL ? [`-c role=${config.DB_ROL}`] : [])];
+  const pool = new pg.Pool({ connectionString: config.DATABASE_URL, max: 10, options: opciones.join(' ') });
   // node-postgres emits 'error' when the server drops an idle client (restart,
   // network blip). Without a listener Node treats it as unhandled and the whole
   // API exits; with it, only the affected queries fail and the pool reconnects.

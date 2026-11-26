@@ -35,6 +35,16 @@ describe('leerConfig', () => {
     expect(() => leerConfig({ ...BASE, TRUST_PROXY: 'true' })).toThrow(/TRUST_PROXY/);
     expect(() => leerConfig({ ...BASE, TRUST_PROXY: '-1' })).toThrow(/TRUST_PROXY/);
   });
+
+  it('DB_ROL is optional and accepts a PostgreSQL role name (DEF-02)', () => {
+    expect(leerConfig(BASE).DB_ROL).toBeUndefined();
+    expect(leerConfig({ ...BASE, DB_ROL: 'sgp_app' }).DB_ROL).toBe('sgp_app');
+  });
+
+  it('refuses a DB_ROL that is not a plain role name (it goes into the connection options)', () => {
+    expect(() => leerConfig({ ...BASE, DB_ROL: 'sgp_app -c role=sgp' })).toThrow(/DB_ROL/);
+    expect(() => leerConfig({ ...BASE, DB_ROL: 'Sgp-App' })).toThrow(/DB_ROL/);
+  });
 });
 
 describe('seed (D12)', () => {
