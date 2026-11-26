@@ -17,10 +17,11 @@ const ConfigSchema = z.object({
    * login role of DATABASE_URL. A plain lowercase name only: it goes into the
    * connection options.
    */
-  DB_ROL: z
-    .string()
-    .regex(/^[a-z_][a-z0-9_]{0,62}$/, 'DB_ROL must be a lowercase PostgreSQL role name')
-    .optional(),
+  DB_ROL: z.preprocess(
+    // `DB_ROL=` (the .env.example line) arrives as '': same as unset.
+    (v) => (v === '' ? undefined : v),
+    z.string().regex(/^[a-z_][a-z0-9_]{0,62}$/, 'DB_ROL must be a lowercase PostgreSQL role name').optional(),
+  ),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

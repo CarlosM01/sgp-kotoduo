@@ -41,6 +41,10 @@ describe('leerConfig', () => {
     expect(leerConfig({ ...BASE, DB_ROL: 'sgp_app' }).DB_ROL).toBe('sgp_app');
   });
 
+  it('an empty DB_ROL (the line in .env.example) means no role switch', () => {
+    expect(leerConfig({ ...BASE, DB_ROL: '' }).DB_ROL).toBeUndefined();
+  });
+
   it('refuses a DB_ROL that is not a plain role name (it goes into the connection options)', () => {
     expect(() => leerConfig({ ...BASE, DB_ROL: 'sgp_app -c role=sgp' })).toThrow(/DB_ROL/);
     expect(() => leerConfig({ ...BASE, DB_ROL: 'Sgp-App' })).toThrow(/DB_ROL/);
