@@ -5,7 +5,8 @@
     "node": ">=24"
   },
   "workspaces": [
-    "api"
+    "api",
+    "web"
   ],
   "scripts": {
     "lint": "npm run lint --workspaces --if-present",
