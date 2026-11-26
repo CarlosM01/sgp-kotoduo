@@ -1,0 +1,25 @@
+# E-27 · CP-24 (inyección SQL/NoSQL) · v0.9 (7993d66) · 2026-11-26 18:41:07 -03 · stack Docker vía nginx :8080
+
+$ GET /ordenes?estado=' OR 1=1-- (Encargada)
+{"error":{"code":"VALIDATION_ERROR","message":"Los datos enviados no son válidos","details":[{"campo":"estado","problema":"invalid_value"}]}}
+[HTTP 400]
+
+$ GET /ordenes?q=' OR 1=1-- (Encargada, texto libre parametrizado)
+{"datos":[],"total":0,"pagina":1,"tamano":20}
+[HTTP 200]
+
+$ GET /ordenes/1;DROP TABLE x (Encargada)
+{"error":{"code":"VALIDATION_ERROR","message":"Los datos enviados no son válidos","details":[{"campo":"id","problema":"invalid_format"}]}}
+[HTTP 400]
+
+$ POST /alertas {insumoId:{$ne:null}} (Operario, etapa propia 33986783-1eaa-4273-8722-1ee3bf2c0c4b)
+{"error":{"code":"VALIDATION_ERROR","message":"Los datos enviados no son válidos","details":[{"campo":"insumoId","problema":"invalid_type"}]}}
+[HTTP 400]
+
+$ POST /auth/login {nombreUsuario:{$ne:null}}
+{"error":{"code":"VALIDATION_ERROR","message":"Los datos enviados no son válidos","details":[{"campo":"nombreUsuario","problema":"invalid_type"},{"campo":"clave","problema":"invalid_type"}]}}
+[HTTP 400]
+
+# Integridad posterior:
+orden_trabajo|5005
+alertas DEMO-CP24|0

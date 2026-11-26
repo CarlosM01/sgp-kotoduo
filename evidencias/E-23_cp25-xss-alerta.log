@@ -1,0 +1,48 @@
+# E-23 — CP-25 (adaptado): XSS almacenado en el comentario de una alerta manual
+# Versión: v0.9 (df19bbc) · Fecha: 2026-11-26 18:38 -0300 · Stack Docker local (http://localhost:8080, nginx + API NODE_ENV=production), Chrome del sistema
+# Comando: cd web && E2E_BASE_URL=http://localhost:8080 npx playwright test e2e/seguridad.spec.ts
+# Adaptación: ES2 usa la nota de una evidencia (no implementada en el MVP); se usa el comentario libre de la alerta manual (POST /api/v1/alertas), que la Encargada lee en P-08 Insumos.
+
+== 1) Ejecución Playwright (corrida final) ==
+
+Running 1 test using 1 worker
+
+etapa usada: 33986783-1eaa-4273-8722-1ee3bf2c0c4b (Corte, DISPONIBLE, OT-2026-0002)
+POST /api/v1/alertas -> 201 id=227 comentario="XSS-CP25-mwy2q7lb img <img src=x onerror=alert(1)>"
+POST /api/v1/alertas -> 201 id=228 comentario="XSS-CP25-mwy2q7lb script <script>alert(2)</script>"
+dialogos=0 []
+errores de pagina=0 []
+elementos inyectados={"imgSrcX":0,"scriptsEnMain":0,"conOnerror":0}
+innerHTML de la tarjeta (fragmento escapado): XSS-CP25-mwy2q7lb img &lt;img src=x onerror=alert(1)&gt;»</p><p class="meta">Manual · afec
+barrera CSP (manejador en linea forzado en el DOM): ejecutado=false violaciones=["script-src-attr inline"]
+  ✓  1 e2e/seguridad.spec.ts:20:1 › CP-25: a stored HTML/script comment in a manual alert renders as text for the Encargada (3.8s)
+
+  1 passed (5.1s)
+
+== 2) Valor almacenado en PostgreSQL (sin sanear al guardar; se codifica al mostrar) ==
+Las filas 225-226 son de una primera corrida idéntica sin la verificación de CSP; 227-228 son de la corrida de arriba.
+ id  | origen | estado  | insumo_id |                     comentario                     
+-----+--------+---------+-----------+----------------------------------------------------
+ 225 | MANUAL | ABIERTA |         4 | XSS-CP25-mwy2pqn1 img <img src=x onerror=alert(1)>
+ 226 | MANUAL | ABIERTA |         4 | XSS-CP25-mwy2pqn1 script <script>alert(2)</script>
+ 227 | MANUAL | ABIERTA |         4 | XSS-CP25-mwy2q7lb img <img src=x onerror=alert(1)>
+ 228 | MANUAL | ABIERTA |         4 | XSS-CP25-mwy2q7lb script <script>alert(2)</script>
+(4 rows)
+
+
+== 3) Cabecera CSP de la ruta /insumos (nginx) ==
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+
+== 4) Prueba unitaria existente: web/test/insumos-bitacora.test.tsx (líneas 16 y 37: comentario '<img src=x onerror=alert(1)> falta hilo' se encuentra como texto) ==
+Comando: npx vitest run --root web test/insumos-bitacora.test.tsx --reporter=verbose
+ ✓ test/insumos-bitacora.test.tsx > flow 4: supplies and alerts (HU-09, HU-03) > shows open alerts with who reported them and the stock state of each supply 334ms
+ ✓ test/insumos-bitacora.test.tsx > flow 4: supplies and alerts (HU-09, HU-03) > the filter asks the API for closed alerts 133ms
+ ✓ test/insumos-bitacora.test.tsx > audit log (HU-12, CU-11) > the Administrador reads the events in plain language and narrows them on screen 198ms
+ ✓ test/insumos-bitacora.test.tsx > audit log (HU-12, CU-11) > the Encargada has no full log screen (she reads it per order) 16ms
+      Tests  4 passed (4)
+
+== Comparación con ES2 (Tabla L.4, CP-25) ==
+Esperado: texto literal; ningún script se ejecuta; la CSP bloquea la ejecución en línea (sin diálogo).
+Obtenido: ambos textos visibles literalmente; 0 diálogos; 0 errores de página; 0 img[src=x], 0 script en main, 0 atributos onerror; innerHTML escapado (&lt;img ...&gt;);
+          manejador en línea forzado en el DOM: no se ejecutó y el navegador reportó la violación 'script-src-attr inline'.
+Captura: evidencias/E-23_cp25-xss-alerta.png
