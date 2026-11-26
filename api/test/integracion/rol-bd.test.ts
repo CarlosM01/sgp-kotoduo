@@ -29,8 +29,10 @@ describe('DB_ROL (DEF-02)', () => {
     // because the login role is also called sgp. Starting a stage as sgp_app
     // failed with 42P01 in the trigger (found by the E2E run with DB_ROL).
     const { pool } = await contenedorCon({ ...process.env, DB_ROL: 'sgp_app' });
-    const { rows } = await pool.query<{ n: string }>('SELECT COUNT(*) AS n FROM orden_trabajo');
-    expect(Number(rows[0]?.n)).toBeGreaterThan(0);
+    const { rows } = await pool.query<{ esquemas: string[] }>('SELECT current_schemas(false) AS esquemas');
+    expect(rows[0]?.esquemas).toContain('sgp');
+    // An unqualified table name resolves (any row count, even 0).
+    await expect(pool.query('SELECT 1 FROM orden_trabajo LIMIT 1')).resolves.toBeDefined();
   });
 
   it('with DB_ROL=sgp_app the immutable kardex refuses UPDATE and DELETE (R7)', async () => {

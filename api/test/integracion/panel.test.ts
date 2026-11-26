@@ -113,3 +113,52 @@ describe('CP-18: the panel identifies overdue and at-risk orders (HU-10 / CU-10)
     expect((await panel({}, operario.token)).status).toBe(403);
   });
 });
+
+// DEF-01 / review R3-001: the API paginates on orden_trabajo before computing the
+// stage aggregates; it must keep returning exactly what v_panel_ordenes (DDL) says.
+describe('DEF-01: the paginated panel query matches v_panel_ordenes', () => {
+  const vista = async (filtro: string, patron: string | null, tamano: number) => {
+    const { rows } = await entorno.contenedor.pool.query<Record<string, unknown>>(
+      `SELECT v.codigo, v.tipo_trabajo, v.estado, v.etapa_actual, v.area_actual, v.responsable_actual,
+              v.porcentaje_avance::float AS porcentaje_avance, v.en_riesgo, v.atrasada, COUNT(*) OVER ()::int AS total
+         FROM sgp.v_panel_ordenes v
+        WHERE CASE $1::text
+                WHEN 'activas'   THEN v.estado = ANY($2::text[])
+                WHEN 'atrasadas' THEN v.atrasada
+                WHEN 'en_riesgo' THEN v.en_riesgo
+                ELSE TRUE
+              END
+          AND ($3::text IS NULL OR v.codigo ILIKE $3 OR v.titulo ILIKE $3)
+        ORDER BY v.atrasada DESC, v.en_riesgo DESC, v.fecha_compromiso, v.codigo
+        LIMIT $4`,
+      [filtro, ['REGISTRADA', 'EN_DISENO', 'EN_PRODUCCION', 'DETENIDA'], patron, tamano],
+    );
+    return rows;
+  };
+  const deApi = (body: { total: number; datos: Array<Record<string, unknown>> }) =>
+    body.datos.map((d) => ({
+      codigo: d.codigo,
+      tipo_trabajo: d.tipoTrabajo,
+      estado: d.estado,
+      etapa_actual: d.etapaActual,
+      area_actual: d.areaActual,
+      responsable_actual: d.responsableActual,
+      porcentaje_avance: d.porcentajeAvance,
+      en_riesgo: d.enRiesgo,
+      atrasada: d.atrasada,
+      total: body.total,
+    }));
+  const sinTotalNulo = (rows: Array<Record<string, unknown>>) =>
+    rows.map((r) => ({ ...r, porcentaje_avance: r.porcentaje_avance ?? 0 }));
+
+  it.each(['activas', 'atrasadas', 'en_riesgo', 'todas'])('filtro=%s: same rows, columns, order and total', async (filtro) => {
+    // With this file's orders (q) and over the whole database (first 50 rows).
+    const conMarca = await panel({ filtro, tamano: '50' });
+    const todo = await request(entorno.app()).get('/api/v1/panel').query({ filtro, tamano: '50' }).auth(encargada.token, { type: 'bearer' });
+    expect(conMarca.status).toBe(200);
+    expect(todo.status).toBe(200);
+
+    expect(deApi(conMarca.body)).toEqual(sinTotalNulo(await vista(filtro, `%${MARCA}%`, 50)));
+    expect(deApi(todo.body)).toEqual(sinTotalNulo(await vista(filtro, null, 50)));
+  });
+});
