@@ -49,7 +49,9 @@ export function Marco({
           </Link>
         ) : null}
         <span className="titulo">{titulo}</span>
-        <span className="usuario" aria-label={`Sesión de ${usuario.nombreCompleto}`}>
+        {/* The name is text (visually hidden on phones, see estilos.css), not an
+            aria-label: a <span> without a role cannot carry one (DEF-03). */}
+        <span className="usuario">
           <span className="nombre">
             {usuario.nombreCompleto}
             <small>{cargoDe(usuario.roles)}</small>

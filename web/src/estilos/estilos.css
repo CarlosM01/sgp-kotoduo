@@ -61,7 +61,8 @@ a { color: var(--color-primario); text-underline-offset: 3px; }
 .topbar .volver:hover, .topbar .usuario:hover { background: rgba(255,255,255,.12); }
 .topbar :focus-visible { outline-color: #fff; }
 .usuario { display: inline-flex; align-items: center; gap: 10px; min-height: var(--toque); padding: 0 8px; border-radius: var(--radio); }
-.usuario .nombre { display: none; text-align: right; line-height: 1.2; font-size: var(--fs-meta); }
+/* Phones: the name is hidden from view but still read by screen readers (DEF-03). */
+.usuario .nombre { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; text-align: right; line-height: 1.2; font-size: var(--fs-meta); }
 .usuario .nombre small { display: block; opacity: .85; }
 .avatar { width: 34px; height: 34px; border-radius: 50%; background: #fff; color: var(--color-primario); display: grid; place-items: center; font-weight: 700; font-size: var(--fs-meta); }
 
@@ -236,7 +237,7 @@ body.acceso { min-height: 100vh; display: grid; place-items: center; padding: 24
   .acciones.una { grid-template-columns: 1fr; }
   .kpis { grid-template-columns: repeat(4, 1fr); }
   .filtros { grid-template-columns: 2fr 1fr; align-items: end; }
-  .usuario .nombre { display: block; }
+  .usuario .nombre { position: static; width: auto; height: auto; overflow: visible; clip: auto; clip-path: none; white-space: normal; display: block; }
 }
 @media (min-width: 1024px) {
   body.app { display: grid; grid-template-columns: 240px minmax(0, 1fr); grid-template-rows: var(--alto-topbar) 1fr; min-height: 100vh; }
