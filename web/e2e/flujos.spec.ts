@@ -5,7 +5,8 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
 const CLAVE_DEMO = 'kotoduo demo local 2026';
-const EVIDENCIAS = '../evidencias';
+// E2E_EVIDENCIAS keeps the F5 captures intact when the flows run elsewhere (F6 stack).
+const EVIDENCIAS = process.env.E2E_EVIDENCIAS ?? '../evidencias';
 // Viewport captures from the top: full-page captures repeat the sticky top bar
 // and the fixed navigation in the middle of the image.
 async function captura(page: Page, nombre: string, { arriba = true } = {}) {

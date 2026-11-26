@@ -18,7 +18,7 @@ const steps = [
   { name: 'lint', cmd: 'npm', args: ['run', 'lint'] },
   { name: 'typecheck', cmd: 'npm', args: ['run', 'typecheck'] },
   { name: 'test', cmd: 'npm', args: ['test'] },
-  // Needs the databases: docker compose up -d
+  // Needs the databases: docker compose up -d postgres mongo
   { name: 'test:integracion', cmd: 'npm', args: ['run', 'test:integracion'] },
 ];
 

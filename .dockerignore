@@ -1,0 +1,15 @@
+# Build context is the repository root (npm workspaces share one lockfile).
+**/node_modules
+**/dist
+**/coverage
+.git
+.codegraph
+.env
+.env.*
+!.env.example
+evidencias
+odd
+docs
+web/test-results
+web/playwright-report
+*.log
