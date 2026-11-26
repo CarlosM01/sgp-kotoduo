@@ -89,7 +89,7 @@ Durante la verificación de las correcciones, antes de publicar `v1.0`, aparecie
 | Hallazgo | Acción | Cómo se verificó |
 |---|---|---|
 | DEF-01: el panel tardaba 706 ms con 5.000 OT | Paginar sobre `orden_trabajo` antes de agregar las etapas | CP-23 E2: 13 ms y p95 34,67 ms con k6 a 10 VU; prueba de paridad con `v_panel_ordenes` |
-| DEF-02: la API operaba como superusuario | `DB_ROL=sgp_app` en el compose, con `search_path` explícito y rechazo si el rol no existe | CP-32 E2; 8 pruebas de `DB_ROL`; E2E de los 4 flujos como `sgp_app` |
+| DEF-02: la API operaba como superusuario | `DB_ROL=sgp_app` en el compose, con `search_path` explícito y rechazo si el rol no existe | CP-32 E2 y E3 (stack Docker reconstruido, E-33); 8 pruebas de `DB_ROL`; E2E de los 4 flujos como `sgp_app` |
 | DEF-03: `aria-label` prohibido en la sesión a 360 px | Nombre como texto, oculto solo a la vista en el celular | CP-36 E3: 0 violaciones en 16 análisis; prueba de componente |
 
 ### 7.2 Propuestas para una versión futura
@@ -101,7 +101,6 @@ Durante la verificación de las correcciones, antes de publicar `v1.0`, aparecie
 | Las funciones de los triggers dependen del `search_path` de la sesión | Fijar `SET search_path = sgp` en cada función del DDL | Ejecutar los flujos con una sesión sin `search_path` explícito |
 | CU-12 (asignar responsable) no tiene CP en ES2 | Definir un CP para HU-08 y su ficha | Ficha ejecutada en la próxima versión |
 | ZAP no se ejecutó (D29) | Escaneo ZAP *baseline* contra el stack local | Sin alertas High ni Medium |
-| Las imágenes Docker de `v1.0` no se reconstruyeron en esta corrida (faltan las imágenes base) | Reconstruir el stack y repetir las cabeceras de CP-32 y los flujos E2E sobre nginx | E2E y cabeceras en verde sobre `:8080` |
 | El detalle de la OT muestra las especificaciones como JSON crudo (observado en CP-34) | Mostrar las especificaciones como pares clave–valor | Captura del detalle a 360 y 1280 px |
 | Sin carga distribuida ni staging (CP-21, CP-22 excluidos; CP-20 reducido a 12 VU) | Medir con varias IP de origen en un entorno de staging | k6 con 40 VU y p95 < 500 ms |
 
