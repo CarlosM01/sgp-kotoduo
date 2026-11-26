@@ -1,0 +1,65 @@
+# E-31 · CP-32 (parcial) · re-ejecución E2 (rol de la API, DEF-02) · v1.0 (a8b5cea) · 2026-11-26 19:16:15 -03
+
+## 1. Configuración del stack en v1.0
+64-      # Least privilege (DEF-02): every session switches to sgp_app, which cannot
+65-      # change the kardex or the outbox nor create objects (DDL grants, R7/R8).
+66:      DB_ROL: sgp_app
+
+## 2. Sesión con las mismas opciones que abre la API (DB_ROL=sgp_app → -c role=sgp_app -c search_path=sgp,public)
+SELECT current_user, session_user, current_setting('is_superuser') AS es_superusuario, current_setting('search_path') AS search_path;
+ current_user | session_user | es_superusuario | search_path 
+--------------+--------------+-----------------+-------------
+ sgp_app      | sgp          | off             | sgp,public
+(1 row)
+
+BEGIN;
+BEGIN
+UPDATE movimiento_insumo SET cantidad = cantidad WHERE id = (SELECT min(id) FROM movimiento_insumo);
+ERROR:  permission denied for table movimiento_insumo
+ROLLBACK;
+ROLLBACK
+BEGIN;
+BEGIN
+DELETE FROM outbox_evento WHERE false;
+ERROR:  permission denied for table outbox_evento
+ROLLBACK;
+ROLLBACK
+BEGIN;
+BEGIN
+CREATE TABLE sgp.cp32_intrusa (x int);
+ERROR:  permission denied for schema sgp at character 14
+ROLLBACK;
+ROLLBACK
+SELECT count(*) AS ot_visibles FROM orden_trabajo;
+ ot_visibles 
+-------------
+        5011
+(1 row)
+
+
+## 3. Rol inexistente: la conexión se rechaza (sin volver al rol de login)
+psql: error: connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  role "rol_inexistente" does not exist
+
+## 4. Pruebas automatizadas en v1.0 (evidencias/ejecuciones/v1.0/api-integracion.json, api-unitarias.json)
+passed  DB_ROL (DEF-02) with DB_ROL=sgp_app every pooled query runs as sgp_app
+passed  DB_ROL (DEF-02) with DB_ROL=sgp_app unqualified names resolve to the sgp schema, as the DDL triggers need
+passed  DB_ROL (DEF-02) with DB_ROL=sgp_app the immutable kardex refuses UPDATE and DELETE (R7)
+passed  DB_ROL (DEF-02) a DB_ROL that does not exist refuses the connection instead of falling back to the login role
+passed  DB_ROL (DEF-02) without DB_ROL the session keeps the login role, as before
+passed  leerConfig DB_ROL is optional and accepts a PostgreSQL role name (DEF-02)
+passed  leerConfig an empty DB_ROL (the line in .env.example) means no role switch
+passed  leerConfig refuses a DB_ROL that is not a plain role name (it goes into the connection options)
+
+## 5. Cabeceras y dependencias
+Sin cambios de código entre v0.9 y v1.0 en la configuración de nginx ni en las cabeceras de la API:
+(vacío = sin cambios; se conserva el resultado de E-24)
+
+$ npm audit --omit=dev
+found 0 vulnerabilities
+$ npm audit
+found 0 vulnerabilities
+
+## 6. Flujos 1–4 de punta a punta con la API como sgp_app (web/e2e/flujos.spec.ts, Playwright, Chrome del sistema)
+# Antes de esta corrida se repuso papel de sublimación (INGRESO +10, comentario DEMO-F7) y se anuló OT-2026-0012, que dejó a medias una corrida anterior detenida por stock insuficiente (409 legible, comportamiento esperado).
+  ✓  1 e2e/flujos.spec.ts:29:1 › flows 1–4 from the browser: create, assign, advance, panel and supply alert (16.9s)
+  1 passed (23.6s)

@@ -195,9 +195,9 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 - [x] Ejecutar cada CP con una ficha: precondiciones, datos, pasos, esperado, **obtenido (observado de verdad)**, fecha, versión, estado. _`evidencias/ejecuciones/fichas/`._
 - [x] Estados permitidos: Aprobado / Fallido / Bloqueado / No ejecutado.
 - [x] Cada fallo genera un `DEF-xx` con causa: hipótesis o confirmada. _DEF-01 a DEF-03, causas confirmadas._
-- [ ] Corregir, publicar `v1.0` y **re-ejecutar sin borrar la ejecución fallida**.
-- [ ] Resumen numérico de estados, separando defectos críticos de menores.
-- [ ] Tabla de recomendaciones: hallazgo → acción → cómo verificar. Separar las corregidas de las propuestas para una versión futura.
+- [x] Corregir, publicar `v1.0` y **re-ejecutar sin borrar la ejecución fallida**. _`v1.0` = `79377e5`; CP-23, CP-32 y CP-36 aprobados._
+- [x] Resumen numérico de estados, separando defectos críticos de menores. _`docs/plan-pruebas.md` §6._
+- [x] Tabla de recomendaciones: hallazgo → acción → cómo verificar. Separar las corregidas de las propuestas para una versión futura. _`docs/plan-pruebas.md` §7._
 
 **Salida:** `evidencias/` con fichas, reportes de herramientas (Vitest, Supertest, Playwright, k6) y registro de defectos.
 
