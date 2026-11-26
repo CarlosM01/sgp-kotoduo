@@ -7,6 +7,8 @@ import { inicioDe, REGLAS } from '../compartido/acceso';
 import { SpriteIconos } from '../compartido/iconos';
 import { useSesion } from '../compartido/sesion';
 import { useTitulo } from '../compartido/ui';
+import { Bitacora } from '../bitacora/Bitacora';
+import { Insumos } from '../insumos/Insumos';
 import { RutaProtegida } from '../marco/RutaProtegida';
 import { MiTrabajo } from '../mi-trabajo/MiTrabajo';
 import { Panel } from '../panel/Panel';
@@ -45,6 +47,14 @@ export function Rutas() {
       <Route
         path="/mi-trabajo"
         element={<RutaProtegida regla={REGLAS['mi-trabajo']} titulo="Mi Trabajo">{(s) => <MiTrabajo sesion={s} />}</RutaProtegida>}
+      />
+      <Route
+        path="/insumos"
+        element={<RutaProtegida regla={REGLAS.insumos} titulo="Insumos">{() => <Insumos />}</RutaProtegida>}
+      />
+      <Route
+        path="/bitacora"
+        element={<RutaProtegida regla={REGLAS.bitacora} titulo="Bitácora">{() => <Bitacora />}</RutaProtegida>}
       />
       <Route
         path="/ordenes"
