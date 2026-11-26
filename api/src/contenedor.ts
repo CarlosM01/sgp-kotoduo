@@ -30,7 +30,14 @@ export async function crearContenedor(
   // Chilean calendar date, the same one the API uses for the estimated end date.
   // DB_ROL (DEF-02): the role is a startup parameter, so a session never runs
   // as the login role, and a missing role refuses the connection (fail closed).
-  const opciones = ['-c TimeZone=America/Santiago', ...(config.DB_ROL ? [`-c role=${config.DB_ROL}`] : [])];
+  // search_path is explicit: the default "$user", public only reached the sgp
+  // schema because the login role is also called sgp, and the DDL triggers use
+  // unqualified table names.
+  const opciones = [
+    '-c TimeZone=America/Santiago',
+    '-c search_path=sgp,public',
+    ...(config.DB_ROL ? [`-c role=${config.DB_ROL}`] : []),
+  ];
   const pool = new pg.Pool({ connectionString: config.DATABASE_URL, max: 10, options: opciones.join(' ') });
   // node-postgres emits 'error' when the server drops an idle client (restart,
   // network blip). Without a listener Node treats it as unhandled and the whole

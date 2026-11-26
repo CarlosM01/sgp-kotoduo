@@ -24,6 +24,15 @@ describe('DB_ROL (DEF-02)', () => {
     expect(rows[0]).toEqual({ rol: 'sgp_app', super: false });
   });
 
+  it('with DB_ROL=sgp_app unqualified names resolve to the sgp schema, as the DDL triggers need', async () => {
+    // The default search_path is "$user", public: it only reached the sgp schema
+    // because the login role is also called sgp. Starting a stage as sgp_app
+    // failed with 42P01 in the trigger (found by the E2E run with DB_ROL).
+    const { pool } = await contenedorCon({ ...process.env, DB_ROL: 'sgp_app' });
+    const { rows } = await pool.query<{ n: string }>('SELECT COUNT(*) AS n FROM orden_trabajo');
+    expect(Number(rows[0]?.n)).toBeGreaterThan(0);
+  });
+
   it('with DB_ROL=sgp_app the immutable kardex refuses UPDATE and DELETE (R7)', async () => {
     const { pool } = await contenedorCon({ ...process.env, DB_ROL: 'sgp_app' });
     await expect(pool.query('UPDATE sgp.movimiento_insumo SET cantidad = cantidad WHERE FALSE')).rejects.toMatchObject({ code: '42501' });
