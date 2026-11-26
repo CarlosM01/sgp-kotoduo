@@ -9,6 +9,8 @@ const ConfigSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
   NODE_ENV: z.string().default('development'),
+  /** Proxy hops in front of the API whose X-Forwarded-For is trusted (1 behind the compose nginx). */
+  TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

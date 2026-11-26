@@ -1,5 +1,5 @@
 // In-memory adapters for HTTP unit tests: no database needed.
-import { crearApi, type Api } from '../../src/app.js';
+import { crearApi, type Api, type AppOptions } from '../../src/app.js';
 import { crearServicioAuth } from '../../src/aplicacion/auth.js';
 import type { ServicioEtapas } from '../../src/aplicacion/etapas.js';
 import type { ServicioInsumos } from '../../src/aplicacion/insumos.js';
@@ -44,7 +44,10 @@ export function auditoriaEnMemoria(): Auditoria & { eventos: NuevoEvento[] } {
   };
 }
 
-export function crearApiDePrueba(usuarios: UsuarioAuth[] = []): Api & { auditoria: ReturnType<typeof auditoriaEnMemoria> } {
+export function crearApiDePrueba(
+  usuarios: UsuarioAuth[] = [],
+  extra: Pick<AppOptions, 'limites' | 'trustProxy'> = {},
+): Api & { auditoria: ReturnType<typeof auditoriaEnMemoria> } {
   const tokens = crearServicioTokensJwt(SECRETO_PRUEBA);
   const auditoria = auditoriaEnMemoria();
   const auth = crearServicioAuth({ usuarios: repositorioEnMemoria(usuarios), hasher: hasherPlano, tokens, auditoria });
@@ -52,7 +55,7 @@ export function crearApiDePrueba(usuarios: UsuarioAuth[] = []): Api & { auditori
   const noUsado = new Proxy({}, { get: () => () => Promise.reject(new Error('not available in HTTP unit tests')) });
   const silencioso = { error: () => {}, warn: () => {} };
   return {
-    ...crearApi({ corsOrigin: 'http://localhost:5173', servicios: { auth, ordenes: noUsado as ServicioOrdenes, etapas: noUsado as ServicioEtapas, insumos: noUsado as ServicioInsumos, tokens, auditoria }, log: silencioso }),
+    ...crearApi({ corsOrigin: 'http://localhost:5173', servicios: { auth, ordenes: noUsado as ServicioOrdenes, etapas: noUsado as ServicioEtapas, insumos: noUsado as ServicioInsumos, tokens, auditoria }, log: silencioso, ...extra }),
     auditoria,
   };
 }

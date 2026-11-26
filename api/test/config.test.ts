@@ -25,6 +25,16 @@ describe('leerConfig', () => {
     leerConfig({ ...BASE, JWT_SECRET: PLACEHOLDER }, { warn });
     expect(warn).toHaveBeenCalledOnce();
   });
+
+  it('TRUST_PROXY defaults to 0 (no proxy trusted) and accepts a hop count (F6)', () => {
+    expect(leerConfig(BASE).TRUST_PROXY).toBe(0);
+    expect(leerConfig({ ...BASE, TRUST_PROXY: '1' }).TRUST_PROXY).toBe(1);
+  });
+
+  it('refuses a TRUST_PROXY that is not a hop count', () => {
+    expect(() => leerConfig({ ...BASE, TRUST_PROXY: 'true' })).toThrow(/TRUST_PROXY/);
+    expect(() => leerConfig({ ...BASE, TRUST_PROXY: '-1' })).toThrow(/TRUST_PROXY/);
+  });
 });
 
 describe('seed (D12)', () => {

@@ -28,6 +28,11 @@ export interface AppOptions {
   servicios: Servicios;
   /** Requests per minute and IP (ES2 Table 7.3, pattern 6). */
   limites?: { authPorMinuto?: number; apiPorMinuto?: number };
+  /**
+   * Proxy hops to trust for the client IP (rate limits and audit log). 0, the
+   * default, ignores X-Forwarded-For so a direct client cannot spoof its IP.
+   */
+  trustProxy?: number;
   log?: Pick<Console, 'error' | 'warn'>;
 }
 
@@ -50,6 +55,7 @@ export function crearApi(options: AppOptions): Api {
   const app = express();
 
   app.disable('x-powered-by');
+  app.set('trust proxy', options.trustProxy ?? 0);
   app.use(asignarRequestId);
   app.use(
     helmet({
