@@ -49,6 +49,7 @@
 | Aprobación de diseño | HU-06, CU-07 | El flujo diseñador–vendedor sigue fuera del sistema | Versión posterior |
 | Relay outbox PostgreSQL → MongoDB | — | Sin consistencia eventual entre motores | La bitácora se escribe directo en Mongo desde la API; el outbox queda como mejora |
 | Notificaciones push/correo | — | Las alertas solo se ven dentro del sistema | Alertas visibles en `insumos` y `panel` |
+| Refresh token con rotación (D2 a) | — | La sesión dura 10 min y luego pide volver a entrar; sin revocación del token emitido | Access JWT corto (D14), `sessionStorage` por pestaña (D27); D28 |
 
 ---
 
@@ -57,7 +58,7 @@
 | ID | Decisión | Opciones | Recomendación |
 |---|---|---|---|
 | D1 | Frontend | (a) Migrar a React + Vite reutilizando `estilos.css`; (b) conectar el HTML actual a la API | **Adoptada (a)**: coincide con el diseño aprobado, sin cambio que justificar. Se migran solo las 8 pantallas del MVP. Si los flujos 1–3 no quedan listos en React antes del cierre de F5/F6, se pasa a (b). |
-| D2 | Sesión | (a) Access JWT corto + refresh en cookie `httpOnly` con rotación; (b) solo access JWT | **Adoptada (a)**, pero se construye al final (paso 5 de §4.1). Si no queda listo al congelar el código, se pasa a (b) y CP-26/CP-30 se excluyen. |
+| D2 | Sesión | (a) Access JWT corto + refresh en cookie `httpOnly` con rotación; (b) solo access JWT | **Adoptada (a)**, pero se construye al final (paso 5 de §4.1). Si no queda listo al congelar el código, se pasa a (b) y CP-26/CP-30 se excluyen. **Al congelar `v0.9` se pasó a (b)** (D28 en `docs/decisiones.md`). |
 | D3 | Uso de MongoDB | Bitácora de auditoría (`bitacora_eventos`) | Escritura directa desde la API en cada acción relevante; lectura solo para Administrador (CU-11). |
 | D4 | Nube | (a) Solo local con Docker + plan de nube descrito; (b) desplegar BD en un servicio gestionado | **(a)** como base; **(b)** solo si sobra tiempo. La plantilla 6.3 pide "cómo se considera su utilización en la nube, cuando corresponda". |
 
@@ -259,6 +260,7 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 | CP-17, CP-31 | Evidencias de etapa fuera del MVP | — |
 | CP-21, CP-22 | Sin entorno staging; se cubre parcialmente con CP-20 | Rendimiento de escrituras y de la PWA móvil sin medir |
 | CP-33, CP-35 | Sin acceso a usuarios reales de Kotoduo | Usabilidad no validada con operarios (brecha de ES2) |
+| CP-26, CP-30 | D2 pasó a (b) al congelar `v0.9` (D28): no hay refresh token | Robo de un access token válido por hasta 10 min |
 
 ---
 
