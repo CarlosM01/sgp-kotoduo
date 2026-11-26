@@ -312,21 +312,52 @@ export function crearOrdenRepositorioPg(pool: Pool): OrdenRepositorio {
         atrasada: boolean;
         total: string;
       }>(
-        `SELECT v.id, v.codigo, v.titulo, v.tipo_trabajo, v.estado, v.prioridad,
-                to_char(v.fecha_compromiso, 'YYYY-MM-DD') AS fecha_compromiso,
-                to_char(v.fecha_estimada_termino, 'YYYY-MM-DD') AS fecha_estimada_termino,
-                v.etapa_actual, v.area_actual, v.responsable_actual, v.porcentaje_avance, v.en_riesgo, v.atrasada,
-                COUNT(*) OVER () AS total
-           FROM sgp.v_panel_ordenes v
-          WHERE CASE $1::text
-                  WHEN 'activas'   THEN v.estado = ANY($2::text[])
-                  WHEN 'atrasadas' THEN v.atrasada
-                  WHEN 'en_riesgo' THEN v.en_riesgo
-                  ELSE TRUE
-                END
-            AND ($3::text IS NULL OR v.codigo ILIKE $3 OR v.titulo ILIKE $3)
-          ORDER BY v.atrasada DESC, v.en_riesgo DESC, v.fecha_compromiso, v.codigo
-          LIMIT $4 OFFSET $5`,
+        // Same columns and order as v_panel_ordenes (DDL), but paginated first
+        // (DEF-01, CP-23): the filter, the order and the flags only need
+        // orden_trabajo, so the page is chosen there and the stage aggregates
+        // (progress, current stage) run for the page rows only. Reading the
+        // view built every active order with all its stages before the LIMIT.
+        `WITH pagina AS (
+           SELECT o.id, o.codigo, o.titulo, o.tipo_trabajo_id, o.estado, o.prioridad,
+                  o.fecha_compromiso, o.fecha_estimada_termino, o.en_riesgo, o.atrasada,
+                  COUNT(*) OVER () AS total
+             FROM (SELECT ot.*,
+                          (ot.estado NOT IN ('TERMINADA','ENTREGADA','ANULADA')
+                           AND COALESCE(ot.fecha_estimada_termino, ot.fecha_compromiso) > ot.fecha_compromiso) AS en_riesgo,
+                          (ot.estado NOT IN ('TERMINADA','ENTREGADA','ANULADA')
+                           AND ot.fecha_compromiso < CURRENT_DATE) AS atrasada
+                     FROM sgp.orden_trabajo ot) o
+            WHERE CASE $1::text
+                    WHEN 'activas'   THEN o.estado = ANY($2::text[])
+                    WHEN 'atrasadas' THEN o.atrasada
+                    WHEN 'en_riesgo' THEN o.en_riesgo
+                    ELSE TRUE
+                  END
+              AND ($3::text IS NULL OR o.codigo ILIKE $3 OR o.titulo ILIKE $3)
+            ORDER BY o.atrasada DESC, o.en_riesgo DESC, o.fecha_compromiso, o.codigo
+            LIMIT $4 OFFSET $5
+         )
+         SELECT p.id, p.codigo, p.titulo, tt.nombre AS tipo_trabajo, p.estado, p.prioridad,
+                to_char(p.fecha_compromiso, 'YYYY-MM-DD') AS fecha_compromiso,
+                to_char(p.fecha_estimada_termino, 'YYYY-MM-DD') AS fecha_estimada_termino,
+                ea.nombre AS etapa_actual, ar.nombre AS area_actual, u.nombre_completo AS responsable_actual,
+                av.porcentaje_avance, p.en_riesgo, p.atrasada, p.total
+           FROM pagina p
+           JOIN sgp.tipo_trabajo tt ON tt.id = p.tipo_trabajo_id
+           LEFT JOIN LATERAL (
+                 SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE e.estado IN ('TERMINADA','OMITIDA'))
+                              / NULLIF(COUNT(*), 0), 0) AS porcentaje_avance
+                   FROM sgp.etapa_orden e
+                  WHERE e.orden_id = p.id) av ON TRUE
+           LEFT JOIN LATERAL (
+                 SELECT x.nombre, x.area_id, x.responsable_id
+                   FROM sgp.etapa_orden x
+                  WHERE x.orden_id = p.id AND x.estado IN ('DISPONIBLE','EN_CURSO','BLOQUEADA')
+                  ORDER BY x.secuencia
+                  LIMIT 1) ea ON TRUE
+           LEFT JOIN sgp.area ar   ON ar.id = ea.area_id
+           LEFT JOIN sgp.usuario u ON u.id  = ea.responsable_id
+          ORDER BY p.atrasada DESC, p.en_riesgo DESC, p.fecha_compromiso, p.codigo`,
         [filtro, ESTADOS_ORDEN_ACTIVOS, patronLike(q), tamano, (pagina - 1) * tamano],
       );
       return {
