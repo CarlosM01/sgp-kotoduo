@@ -70,18 +70,18 @@ Las respuestas no vienen del cliente: se declaran como **supuestos de diseño** 
 
 | # | Pregunta prioritaria | Supuesto adoptado | Fuente / justificación |
 |---|---|---|---|
-| 1 | Problema principal a resolver primero | _completar_ | |
+| 1 | Problema principal a resolver primero | Saber en qué etapa va cada trabajo y a quién le toca seguir | Diagnóstico U1 (Informe 2 §1) |
 | 2 | Trabajos con etapas estandarizables | Uniformes y letreros | Plantillas de ES2 |
 | 3 | Quién define y valida las etapas | Encargada de Producción | HU-07 |
 | 4 | Cómo se asigna y se indica qué hacer después | Asignación por la Encargada; "Mi Trabajo" muestra la siguiente actividad | HU-01, HU-08 |
-| 5 | Datos necesarios para registrar un trabajo | _completar_ (campos de `orden_trabajo`) | DDL |
+| 5 | Datos necesarios para registrar un trabajo | Tipo de trabajo, título, institución cliente (sin contacto), cantidad, especificaciones, prioridad y fecha comprometida | Campos de `orden_trabajo` (DDL) |
 | 6 | Cómo se determinan los insumos antes de producir | Requerimiento derivado de la plantilla × cantidad | `plantilla_insumo` |
 | 7 | Inventario completo o anticipar faltantes | Anticipar faltantes con stock mínimo | HU-09 |
 | 8 | Estados y eventos de avance | Estados de etapa: PENDIENTE, DISPONIBLE, EN_CURSO, BLOQUEADA, TERMINADA, OMITIDA | CP-01/CP-02 |
 | 9 | Roles y permisos | 5 roles: Operario, Vendedor, Diseñador, Encargada, Administrador | Tabla 7.1 ES2 |
 | 10 | Dispositivos y conectividad | Celular del operario + PC de oficina; mobile-first | RNF-01, RNF-02 |
 | 11 | Funcionalidades de la primera versión | Los 4 flujos de §1.1 | Este roadmap |
-| 12 | Quién aprueba y cómo se acepta | _completar_ | |
+| 12 | Quién aprueba y cómo se acepta | La Encargada de Producción, tras una demostración de los 4 flujos con datos ficticios | Supuesto propio (no confirmado) |
 
 ---
 
@@ -116,7 +116,7 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 - [x] Crear el repositorio `sgp-kotoduo` como monorepo: `api/`, `web/`, `db/`, `docs/`, `evidencias/`.
 - [x] Crear un tablero (GitHub Projects) con una tarjeta por HU del MVP. Evidencia para 3.1.3.6.
 - [x] Definir los IDs estables: HU, CU, CP, `DEF-xx` (defectos), `E-xx` (evidencias).
-- [ ] Cerrar las decisiones D1–D4 y completar los supuestos de §3. _D1–D4 cerradas en `docs/decisiones.md`; faltan los supuestos 1, 5 y 12._
+- [x] Cerrar las decisiones D1–D4 y completar los supuestos de §3. _D1–D4 cerradas en `docs/decisiones.md`; los 12 supuestos declarados como no confirmados en la Tabla 4.4 del Informe 3._
 - [x] Verificación local por terminal (`npm run verify`): lint + typecheck + tests, con log fechado en `evidencias/ejecuciones/`. Reemplaza el CI de GitHub Actions, que la rúbrica no exige.
 - [x] `.env.example` con valores ficticios. Ningún secreto real en el repositorio.
 - [ ] Consultar al docente cómo se evalúa 3.1.3.6 (colaboración) en un proyecto individual.
@@ -203,10 +203,10 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ### F8 — Informe 3 y demo · criterios 3.1.6.14 y 3.1.6.15
 
-- [ ] Redactar el informe según §8.
-- [ ] Ensayar el guion de demo (§9) con cronómetro. **Máximo 10 minutos.**
-- [ ] Preparar una hoja de apoyo para preguntas: dónde está cada HU en el código, qué CP la prueba y qué quedó pendiente.
-- [ ] Repasar la checklist (§11).
+- [x] Redactar el informe según §8. _`informe-3/Informe3_Kotoduo_SGP.md` y su `.docx` generado sobre la plantilla oficial._
+- [ ] Ensayar el guion de demo (§9) con cronómetro. **Máximo 10 minutos.** _Guion con comandos y tiempos en `informe-3/apoyo/guion-demo.md`; comandos de solo lectura probados contra el stack._
+- [x] Preparar una hoja de apoyo para preguntas: dónde está cada HU en el código, qué CP la prueba y qué quedó pendiente. _`informe-3/apoyo/hoja-apoyo-preguntas.md`._
+- [x] Repasar la checklist (§11).
 
 ---
 
@@ -345,16 +345,16 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ## 11. Checklist previa a la entrega (guía ES3 §8)
 
-- [ ] La versión implementada y sus limitaciones están declaradas.
-- [ ] Cada funcionalidad se vincula con una HU.
-- [ ] Las evidencias muestran acción y resultado, no pantallas estáticas.
-- [ ] Almacenamiento, consulta y restricciones comprobados en la base.
-- [ ] Cada mecanismo de seguridad tiene al menos una prueba.
-- [ ] Las instrucciones de instalación son reales y están probadas.
-- [ ] La matriz distingue Aprobado / Fallido / Bloqueado / No ejecutado.
-- [ ] Los resultados esperado y obtenido están registrados por separado.
-- [ ] Cada discrepancia tiene una recomendación trazable o constancia de su corrección.
-- [ ] El informe sigue las 13 secciones, sin "— criterio 3.X.X" en los títulos.
+- [x] La versión implementada y sus limitaciones están declaradas. _Informe §4 y Anexo A._
+- [x] Cada funcionalidad se vincula con una HU. _Tablas 4.1, 5.1 y E.1._
+- [x] Las evidencias muestran acción y resultado, no pantallas estáticas. _Figuras 5.1–5.7 del E2E._
+- [x] Almacenamiento, consulta y restricciones comprobados en la base. _§6.2 (E-06, E-07) y §6.3._
+- [x] Cada mecanismo de seguridad tiene al menos una prueba. _Tabla 7.3, columna "Prueba"._
+- [x] Las instrucciones de instalación son reales y están probadas. _§8.3 (E-19); falta que las siga otra persona._
+- [x] La matriz distingue Aprobado / Fallido / Bloqueado / No ejecutado. _Tabla 9.5._
+- [x] Los resultados esperado y obtenido están registrados por separado. _Tabla 10.1 y fichas._
+- [x] Cada discrepancia tiene una recomendación trazable o constancia de su corrección. _Tablas 10.2–10.4._
+- [x] El informe sigue las 13 secciones, sin "— criterio 3.X.X" en los títulos. _Comprobado en el `.docx` generado._
 
 ---
 
