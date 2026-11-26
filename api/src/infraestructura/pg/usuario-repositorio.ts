@@ -59,8 +59,8 @@ export function crearUsuarioRepositorioPg(pool: Pool): UsuarioRepositorio {
           WHERE u.activo
           GROUP BY u.id
          HAVING bool_or(r.codigo = ANY($1::text[]))
-          ORDER BY u.nombre_completo, u.id
-          LIMIT 500`,
+          ORDER BY u.nombre_completo, u.id`,
+        // No row cap: the select must list everyone the assignment accepts (review R3-001).
         [roles],
       );
       return rows.map((f) => ({ id: f.id, nombreCompleto: f.nombre_completo, roles: f.roles.filter(esCodigoRol) }));

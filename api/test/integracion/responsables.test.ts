@@ -1,5 +1,6 @@
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { fechaLocal } from '../../src/dominio/calendario.js';
 import { prepararEntorno, type Entorno, type UsuarioPrueba } from './apoyo.js';
 
 // D26: the assignment select of the order detail (HU-08 partial) needs the
@@ -46,10 +47,30 @@ describe('GET /responsables (D26)', () => {
     for (const u of porId.values()) expect(Object.keys(u).sort()).toEqual(['id', 'nombreCompleto', 'roles']);
   });
 
-  it('every listed user is accepted by PATCH /etapas/{id}/responsable (same rule)', async () => {
-    const res = await listar(encargada.token);
-    for (const u of res.body.datos as Array<{ roles: string[] }>) {
-      expect(u.roles.some((r) => ['ADMINISTRADOR', 'ENCARGADA_PRODUCCION', 'DISENADOR', 'OPERARIO'].includes(r))).toBe(true);
+  it('the listed users are exactly the ones PATCH /etapas/{id}/responsable accepts (same rule, review R3-002)', async () => {
+    const api = entorno.app();
+    const creada = await request(api)
+      .post('/api/v1/ordenes')
+      .auth(encargada.token, { type: 'bearer' })
+      .send({
+        tipoTrabajoId: 2,
+        titulo: 'Prueba responsables D26',
+        referenciaCliente: 'Cliente de prueba',
+        cantidad: 1,
+        fechaCompromiso: fechaLocal(new Date(Date.now() + 20 * 86_400_000)),
+      });
+    expect(creada.status).toBe(201);
+    const listados = new Set((await listar(encargada.token)).body.datos.map((u: { id: string }) => u.id));
+
+    // Each test user, listed or not, against the assignment itself.
+    for (const u of [operario, disenador, encargada, vendedor, inactivo]) {
+      const det = await request(api).get(`/api/v1/ordenes/${creada.body.id}`).auth(encargada.token, { type: 'bearer' });
+      const etapa = det.body.etapas[0] as { id: string; version: number };
+      const res = await request(api)
+        .patch(`/api/v1/etapas/${etapa.id}/responsable`)
+        .auth(encargada.token, { type: 'bearer' })
+        .send({ responsableId: u.id, version: etapa.version });
+      expect({ id: u.id, aceptado: res.status === 200 }).toEqual({ id: u.id, aceptado: listados.has(u.id) });
     }
   });
 
