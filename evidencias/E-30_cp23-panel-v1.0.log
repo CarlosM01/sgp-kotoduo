@@ -1,0 +1,598 @@
+# E-30 · CP-23 (parcial) · re-ejecución E2 · v1.0 (a8b5cea) · 2026-11-26 19:12:44 -03
+# API local (npm, tsx) con DB_ROL=sgp_app en :3000; PostgreSQL del contenedor sgp-postgres. Sin stack Docker: reconstruir las imágenes requiere descargar las imágenes base.
+
+## 1. EXPLAIN ANALYZE de la consulta de GET /panel en v1.0 (api/src/infraestructura/pg/orden-repositorio.ts, panel())
+# rol: sgp_app | OT: 5011 | etapas: 30066
+# PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+
+== EXPLAIN (ANALYZE, BUFFERS) · filtro=activas · tamano=20 · pagina=1 ==
+Nested Loop Left Join  (cost=458.65..1013.87 rows=20 width=513) (actual time=11.426..12.571 rows=20 loops=1)
+  Buffers: shared hit=273
+  ->  Nested Loop Left Join  (cost=458.49..997.27 rows=20 width=317) (actual time=11.335..12.435 rows=20 loops=1)
+        Buffers: shared hit=271
+        ->  Nested Loop Left Join  (cost=431.67..947.30 rows=20 width=285) (actual time=11.235..11.589 rows=20 loops=1)
+              Buffers: shared hit=187
+              ->  Nested Loop  (cost=404.86..410.45 rows=20 width=253) (actual time=11.192..11.217 rows=20 loops=1)
+                    Buffers: shared hit=126
+                    ->  Limit  (cost=404.71..404.76 rows=20 width=77) (actual time=11.161..11.168 rows=20 loops=1)
+                          Buffers: shared hit=124
+                          ->  Sort  (cost=404.71..414.72 rows=4002 width=77) (actual time=11.159..11.162 rows=20 loops=1)
+                                Sort Key: ((((ot.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (ot.fecha_compromiso < CURRENT_DATE))) DESC, ((((ot.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (COALESCE(ot.fecha_estimada_termino, ot.fecha_compromiso) > ot.fecha_compromiso))) DESC, ot.fecha_compromiso, ot.codigo
+                                Sort Method: top-N heapsort  Memory: 28kB
+                                Buffers: shared hit=124
+                                ->  WindowAgg  (cost=0.00..298.22 rows=4002 width=77) (actual time=6.260..8.379 rows=4002 loops=1)
+                                      Buffers: shared hit=113
+                                      ->  Seq Scan on orden_trabajo ot  (cost=0.00..188.16 rows=4002 width=67) (actual time=0.026..2.663 rows=4002 loops=1)
+                                            Filter: ((estado)::text = ANY ('{REGISTRADA,EN_DISENO,EN_PRODUCCION,DETENIDA}'::text[]))
+                                            Rows Removed by Filter: 1009
+                                            Buffers: shared hit=113
+                    ->  Memoize  (cost=0.15..2.57 rows=1 width=180) (actual time=0.002..0.002 rows=1 loops=20)
+                          Cache Key: ot.tipo_trabajo_id
+                          Cache Mode: logical
+                          Hits: 19  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                          Buffers: shared hit=2
+                          ->  Index Scan using tipo_trabajo_pkey on tipo_trabajo tt  (cost=0.14..2.56 rows=1 width=180) (actual time=0.020..0.020 rows=1 loops=1)
+                                Index Cond: (id = ot.tipo_trabajo_id)
+                                Buffers: shared hit=2
+              ->  Aggregate  (cost=26.81..26.83 rows=1 width=32) (actual time=0.018..0.018 rows=1 loops=20)
+                    Buffers: shared hit=61
+                    ->  Bitmap Heap Scan on etapa_orden e  (cost=4.33..26.76 rows=6 width=10) (actual time=0.012..0.013 rows=6 loops=20)
+                          Recheck Cond: (orden_id = ot.id)
+                          Heap Blocks: exact=21
+                          Buffers: shared hit=61
+                          ->  Bitmap Index Scan on uq_etapa_secuencia  (cost=0.00..4.33 rows=6 width=0) (actual time=0.007..0.007 rows=6 loops=20)
+                                Index Cond: (orden_id = ot.id)
+                                Buffers: shared hit=40
+        ->  Hash Right Join  (cost=26.82..27.97 rows=1 width=32) (actual time=0.033..0.035 rows=1 loops=20)
+              Hash Cond: (u.id = ea.responsable_id)
+              Buffers: shared hit=84
+              ->  Seq Scan on usuario u  (cost=0.00..1.10 rows=10 width=31) (actual time=0.001..0.002 rows=5 loops=20)
+                    Buffers: shared hit=20
+              ->  Hash  (cost=26.81..26.81 rows=1 width=33) (actual time=0.029..0.029 rows=1 loops=20)
+                    Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                    Buffers: shared hit=64
+                    ->  Subquery Scan on ea  (cost=26.79..26.81 rows=1 width=33) (actual time=0.021..0.021 rows=1 loops=20)
+                          Buffers: shared hit=64
+                          ->  Limit  (cost=26.79..26.80 rows=1 width=35) (actual time=0.020..0.020 rows=1 loops=20)
+                                Buffers: shared hit=64
+                                ->  Sort  (cost=26.79..26.80 rows=1 width=35) (actual time=0.015..0.015 rows=1 loops=20)
+                                      Sort Key: x.secuencia
+                                      Sort Method: quicksort  Memory: 25kB
+                                      Buffers: shared hit=64
+                                      ->  Bitmap Heap Scan on etapa_orden x  (cost=4.33..26.78 rows=1 width=35) (actual time=0.004..0.005 rows=1 loops=20)
+                                            Recheck Cond: (orden_id = ot.id)
+                                            Filter: ((estado)::text = ANY ('{DISPONIBLE,EN_CURSO,BLOQUEADA}'::text[]))
+                                            Rows Removed by Filter: 5
+                                            Heap Blocks: exact=21
+                                            Buffers: shared hit=61
+                                            ->  Bitmap Index Scan on uq_etapa_secuencia  (cost=0.00..4.33 rows=6 width=0) (actual time=0.002..0.002 rows=6 loops=20)
+                                                  Index Cond: (orden_id = ot.id)
+                                                  Buffers: shared hit=40
+  ->  Memoize  (cost=0.15..8.17 rows=1 width=140) (actual time=0.001..0.001 rows=1 loops=20)
+        Cache Key: ea.area_id
+        Cache Mode: logical
+        Hits: 19  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+        Buffers: shared hit=2
+        ->  Index Scan using area_pkey on area ar  (cost=0.14..8.16 rows=1 width=140) (actual time=0.020..0.020 rows=1 loops=1)
+              Index Cond: (id = ea.area_id)
+              Buffers: shared hit=2
+Planning:
+  Buffers: shared hit=352
+Planning Time: 6.769 ms
+Execution Time: 13.264 ms
+
+== EXPLAIN (ANALYZE, BUFFERS) · filtro=activas · tamano=50 · pagina=1 ==
+Nested Loop Left Join  (cost=485.10..1879.97 rows=50 width=513) (actual time=15.982..21.232 rows=50 loops=1)
+  Buffers: shared hit=475
+  ->  Nested Loop Left Join  (cost=484.94..1862.07 rows=50 width=317) (actual time=15.932..20.927 rows=50 loops=1)
+        Buffers: shared hit=471
+        ->  Nested Loop Left Join  (cost=458.12..1777.37 rows=50 width=285) (actual time=15.767..17.158 rows=50 loops=1)
+              Buffers: shared hit=268
+              ->  Nested Loop  (cost=431.32..435.25 rows=50 width=253) (actual time=15.694..15.808 rows=50 loops=1)
+                    Buffers: shared hit=115
+                    ->  Limit  (cost=431.16..431.29 rows=50 width=77) (actual time=15.632..15.660 rows=50 loops=1)
+                          Buffers: shared hit=113
+                          ->  Sort  (cost=431.16..441.17 rows=4002 width=77) (actual time=15.629..15.644 rows=50 loops=1)
+                                Sort Key: ((((ot.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (ot.fecha_compromiso < CURRENT_DATE))) DESC, ((((ot.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (COALESCE(ot.fecha_estimada_termino, ot.fecha_compromiso) > ot.fecha_compromiso))) DESC, ot.fecha_compromiso, ot.codigo
+                                Sort Method: top-N heapsort  Memory: 35kB
+                                Buffers: shared hit=113
+                                ->  WindowAgg  (cost=0.00..298.22 rows=4002 width=77) (actual time=6.210..10.152 rows=4002 loops=1)
+                                      Buffers: shared hit=113
+                                      ->  Seq Scan on orden_trabajo ot  (cost=0.00..188.16 rows=4002 width=67) (actual time=0.018..2.603 rows=4002 loops=1)
+                                            Filter: ((estado)::text = ANY ('{REGISTRADA,EN_DISENO,EN_PRODUCCION,DETENIDA}'::text[]))
+                                            Rows Removed by Filter: 1009
+                                            Buffers: shared hit=113
+                    ->  Memoize  (cost=0.15..1.13 rows=1 width=180) (actual time=0.002..0.002 rows=1 loops=50)
+                          Cache Key: ot.tipo_trabajo_id
+                          Cache Mode: logical
+                          Hits: 49  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                          Buffers: shared hit=2
+                          ->  Index Scan using tipo_trabajo_pkey on tipo_trabajo tt  (cost=0.14..1.12 rows=1 width=180) (actual time=0.043..0.044 rows=1 loops=1)
+                                Index Cond: (id = ot.tipo_trabajo_id)
+                                Buffers: shared hit=2
+              ->  Aggregate  (cost=26.81..26.83 rows=1 width=32) (actual time=0.025..0.026 rows=1 loops=50)
+                    Buffers: shared hit=153
+                    ->  Bitmap Heap Scan on etapa_orden e  (cost=4.33..26.76 rows=6 width=10) (actual time=0.015..0.017 rows=6 loops=50)
+                          Recheck Cond: (orden_id = ot.id)
+                          Heap Blocks: exact=53
+                          Buffers: shared hit=153
+                          ->  Bitmap Index Scan on uq_etapa_secuencia  (cost=0.00..4.33 rows=6 width=0) (actual time=0.009..0.009 rows=6 loops=50)
+                                Index Cond: (orden_id = ot.id)
+                                Buffers: shared hit=100
+        ->  Hash Right Join  (cost=26.82..27.97 rows=1 width=32) (actual time=0.059..0.062 rows=1 loops=50)
+              Hash Cond: (u.id = ea.responsable_id)
+              Buffers: shared hit=203
+              ->  Seq Scan on usuario u  (cost=0.00..1.10 rows=10 width=31) (actual time=0.002..0.003 rows=5 loops=50)
+                    Buffers: shared hit=50
+              ->  Hash  (cost=26.81..26.81 rows=1 width=33) (actual time=0.051..0.051 rows=1 loops=50)
+                    Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                    Buffers: shared hit=153
+                    ->  Subquery Scan on ea  (cost=26.79..26.81 rows=1 width=33) (actual time=0.036..0.037 rows=1 loops=50)
+                          Buffers: shared hit=153
+                          ->  Limit  (cost=26.79..26.80 rows=1 width=35) (actual time=0.036..0.036 rows=1 loops=50)
+                                Buffers: shared hit=153
+                                ->  Sort  (cost=26.79..26.80 rows=1 width=35) (actual time=0.026..0.026 rows=1 loops=50)
+                                      Sort Key: x.secuencia
+                                      Sort Method: quicksort  Memory: 25kB
+                                      Buffers: shared hit=153
+                                      ->  Bitmap Heap Scan on etapa_orden x  (cost=4.33..26.78 rows=1 width=35) (actual time=0.009..0.011 rows=1 loops=50)
+                                            Recheck Cond: (orden_id = ot.id)
+                                            Filter: ((estado)::text = ANY ('{DISPONIBLE,EN_CURSO,BLOQUEADA}'::text[]))
+                                            Rows Removed by Filter: 5
+                                            Heap Blocks: exact=53
+                                            Buffers: shared hit=153
+                                            ->  Bitmap Index Scan on uq_etapa_secuencia  (cost=0.00..4.33 rows=6 width=0) (actual time=0.005..0.005 rows=6 loops=50)
+                                                  Index Cond: (orden_id = ot.id)
+                                                  Buffers: shared hit=100
+  ->  Memoize  (cost=0.15..8.17 rows=1 width=140) (actual time=0.001..0.001 rows=1 loops=50)
+        Cache Key: ea.area_id
+        Cache Mode: logical
+        Hits: 48  Misses: 2  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+        Buffers: shared hit=4
+        ->  Index Scan using area_pkey on area ar  (cost=0.14..8.16 rows=1 width=140) (actual time=0.013..0.013 rows=1 loops=2)
+              Index Cond: (id = ea.area_id)
+              Buffers: shared hit=4
+Planning Time: 0.942 ms
+Execution Time: 22.005 ms
+
+== 20 ejecuciones (filtro=activas, tamano=20), cliente node-postgres ==
+n=20 min=15.6 ms p50=21.7 ms p95=27.4 ms max=27.6 ms
+
+## 2. k6 1.0.0 · 10 VU · rampa 1 min · 2 min sostenido · GET /panel?filtro=activas&tamano=20 cada 3 s por VU (scripts/k6/cp23-panel.js)
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: /k6/cp23-panel.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 10 max VUs, 3m15s max duration (incl. graceful stop):
+              * panel: Up to 10 looping VUs for 3m10s over 3 stages (gracefulRampDown: 5s, gracefulStop: 30s)
+
+
+panel   [   0% ] 00/10 VUs  0m00.8s/3m10.0s
+
+panel   [   1% ] 00/10 VUs  0m01.8s/3m10.0s
+
+panel   [   1% ] 00/10 VUs  0m02.8s/3m10.0s
+
+panel   [   2% ] 00/10 VUs  0m03.8s/3m10.0s
+
+panel   [   3% ] 00/10 VUs  0m04.8s/3m10.0s
+
+panel   [   3% ] 00/10 VUs  0m05.8s/3m10.0s
+
+panel   [   4% ] 01/10 VUs  0m06.8s/3m10.0s
+
+panel   [   4% ] 01/10 VUs  0m07.8s/3m10.0s
+
+panel   [   5% ] 01/10 VUs  0m08.8s/3m10.0s
+
+panel   [   5% ] 01/10 VUs  0m09.8s/3m10.0s
+
+panel   [   6% ] 01/10 VUs  0m10.8s/3m10.0s
+
+panel   [   6% ] 01/10 VUs  0m11.8s/3m10.0s
+
+panel   [   7% ] 02/10 VUs  0m12.8s/3m10.0s
+
+panel   [   7% ] 02/10 VUs  0m13.8s/3m10.0s
+
+panel   [   8% ] 02/10 VUs  0m14.8s/3m10.0s
+
+panel   [   8% ] 02/10 VUs  0m15.8s/3m10.0s
+
+panel   [   9% ] 02/10 VUs  0m16.8s/3m10.0s
+
+panel   [   9% ] 02/10 VUs  0m17.8s/3m10.0s
+
+panel   [  10% ] 03/10 VUs  0m18.8s/3m10.0s
+
+panel   [  10% ] 03/10 VUs  0m19.8s/3m10.0s
+
+panel   [  11% ] 03/10 VUs  0m20.8s/3m10.0s
+
+panel   [  11% ] 03/10 VUs  0m21.8s/3m10.0s
+
+panel   [  12% ] 03/10 VUs  0m22.8s/3m10.0s
+
+panel   [  13% ] 03/10 VUs  0m23.8s/3m10.0s
+
+panel   [  13% ] 04/10 VUs  0m24.8s/3m10.0s
+
+panel   [  14% ] 04/10 VUs  0m25.8s/3m10.0s
+
+panel   [  14% ] 04/10 VUs  0m26.8s/3m10.0s
+
+panel   [  15% ] 04/10 VUs  0m27.8s/3m10.0s
+
+panel   [  15% ] 04/10 VUs  0m28.8s/3m10.0s
+
+panel   [  16% ] 04/10 VUs  0m29.8s/3m10.0s
+
+panel   [  16% ] 05/10 VUs  0m30.8s/3m10.0s
+
+panel   [  17% ] 05/10 VUs  0m31.8s/3m10.0s
+
+panel   [  17% ] 05/10 VUs  0m32.8s/3m10.0s
+
+panel   [  18% ] 05/10 VUs  0m33.8s/3m10.0s
+
+panel   [  18% ] 05/10 VUs  0m34.8s/3m10.0s
+
+panel   [  19% ] 05/10 VUs  0m35.8s/3m10.0s
+
+panel   [  19% ] 06/10 VUs  0m36.8s/3m10.0s
+
+panel   [  20% ] 06/10 VUs  0m37.8s/3m10.0s
+
+panel   [  20% ] 06/10 VUs  0m38.8s/3m10.0s
+
+panel   [  21% ] 06/10 VUs  0m39.8s/3m10.0s
+
+panel   [  21% ] 06/10 VUs  0m40.8s/3m10.0s
+
+panel   [  22% ] 06/10 VUs  0m41.8s/3m10.0s
+
+panel   [  23% ] 07/10 VUs  0m42.8s/3m10.0s
+
+panel   [  23% ] 07/10 VUs  0m43.8s/3m10.0s
+
+panel   [  24% ] 07/10 VUs  0m44.8s/3m10.0s
+
+panel   [  24% ] 07/10 VUs  0m45.8s/3m10.0s
+
+panel   [  25% ] 07/10 VUs  0m46.8s/3m10.0s
+
+panel   [  25% ] 07/10 VUs  0m47.8s/3m10.0s
+
+panel   [  26% ] 08/10 VUs  0m48.8s/3m10.0s
+
+panel   [  26% ] 08/10 VUs  0m49.8s/3m10.0s
+
+panel   [  27% ] 08/10 VUs  0m50.8s/3m10.0s
+
+panel   [  27% ] 08/10 VUs  0m51.8s/3m10.0s
+
+panel   [  28% ] 08/10 VUs  0m52.8s/3m10.0s
+
+panel   [  28% ] 08/10 VUs  0m53.8s/3m10.0s
+
+panel   [  29% ] 09/10 VUs  0m54.8s/3m10.0s
+
+panel   [  29% ] 09/10 VUs  0m55.8s/3m10.0s
+
+panel   [  30% ] 09/10 VUs  0m56.8s/3m10.0s
+
+panel   [  30% ] 09/10 VUs  0m57.8s/3m10.0s
+
+panel   [  31% ] 09/10 VUs  0m58.8s/3m10.0s
+
+panel   [  31% ] 09/10 VUs  0m59.8s/3m10.0s
+
+panel   [  32% ] 10/10 VUs  1m00.8s/3m10.0s
+
+panel   [  33% ] 10/10 VUs  1m01.8s/3m10.0s
+
+panel   [  33% ] 10/10 VUs  1m02.8s/3m10.0s
+
+panel   [  34% ] 10/10 VUs  1m03.8s/3m10.0s
+
+panel   [  34% ] 10/10 VUs  1m04.8s/3m10.0s
+
+panel   [  35% ] 10/10 VUs  1m05.8s/3m10.0s
+
+panel   [  35% ] 10/10 VUs  1m06.8s/3m10.0s
+
+panel   [  36% ] 10/10 VUs  1m07.8s/3m10.0s
+
+panel   [  36% ] 10/10 VUs  1m08.8s/3m10.0s
+
+panel   [  37% ] 10/10 VUs  1m09.8s/3m10.0s
+
+panel   [  37% ] 10/10 VUs  1m10.8s/3m10.0s
+
+panel   [  38% ] 10/10 VUs  1m11.8s/3m10.0s
+
+panel   [  38% ] 10/10 VUs  1m12.8s/3m10.0s
+
+panel   [  39% ] 10/10 VUs  1m13.8s/3m10.0s
+
+panel   [  39% ] 10/10 VUs  1m14.8s/3m10.0s
+
+panel   [  40% ] 10/10 VUs  1m15.8s/3m10.0s
+
+panel   [  40% ] 10/10 VUs  1m16.8s/3m10.0s
+
+panel   [  41% ] 10/10 VUs  1m17.8s/3m10.0s
+
+panel   [  41% ] 10/10 VUs  1m18.8s/3m10.0s
+
+panel   [  42% ] 10/10 VUs  1m19.8s/3m10.0s
+
+panel   [  43% ] 10/10 VUs  1m20.8s/3m10.0s
+
+panel   [  43% ] 10/10 VUs  1m21.8s/3m10.0s
+
+panel   [  44% ] 10/10 VUs  1m22.8s/3m10.0s
+
+panel   [  44% ] 10/10 VUs  1m23.8s/3m10.0s
+
+panel   [  45% ] 10/10 VUs  1m24.8s/3m10.0s
+
+panel   [  45% ] 10/10 VUs  1m25.8s/3m10.0s
+
+panel   [  46% ] 10/10 VUs  1m26.8s/3m10.0s
+
+panel   [  46% ] 10/10 VUs  1m27.8s/3m10.0s
+
+panel   [  47% ] 10/10 VUs  1m28.8s/3m10.0s
+
+panel   [  47% ] 10/10 VUs  1m29.8s/3m10.0s
+
+panel   [  48% ] 10/10 VUs  1m30.8s/3m10.0s
+
+panel   [  48% ] 10/10 VUs  1m31.8s/3m10.0s
+
+panel   [  49% ] 10/10 VUs  1m32.8s/3m10.0s
+
+panel   [  49% ] 10/10 VUs  1m33.8s/3m10.0s
+
+panel   [  50% ] 10/10 VUs  1m34.8s/3m10.0s
+
+panel   [  50% ] 10/10 VUs  1m35.8s/3m10.0s
+
+panel   [  51% ] 10/10 VUs  1m36.8s/3m10.0s
+
+panel   [  51% ] 10/10 VUs  1m37.8s/3m10.0s
+
+panel   [  52% ] 10/10 VUs  1m38.8s/3m10.0s
+
+panel   [  53% ] 10/10 VUs  1m39.8s/3m10.0s
+
+panel   [  53% ] 10/10 VUs  1m40.8s/3m10.0s
+
+panel   [  54% ] 10/10 VUs  1m41.8s/3m10.0s
+
+panel   [  54% ] 10/10 VUs  1m42.8s/3m10.0s
+
+panel   [  55% ] 10/10 VUs  1m43.8s/3m10.0s
+
+panel   [  55% ] 10/10 VUs  1m44.8s/3m10.0s
+
+panel   [  56% ] 10/10 VUs  1m45.8s/3m10.0s
+
+panel   [  56% ] 10/10 VUs  1m46.8s/3m10.0s
+
+panel   [  57% ] 10/10 VUs  1m47.8s/3m10.0s
+
+panel   [  57% ] 10/10 VUs  1m48.8s/3m10.0s
+
+panel   [  58% ] 10/10 VUs  1m49.8s/3m10.0s
+
+panel   [  58% ] 10/10 VUs  1m50.8s/3m10.0s
+
+panel   [  59% ] 10/10 VUs  1m51.8s/3m10.0s
+
+panel   [  59% ] 10/10 VUs  1m52.8s/3m10.0s
+
+panel   [  60% ] 10/10 VUs  1m53.8s/3m10.0s
+
+panel   [  60% ] 10/10 VUs  1m54.8s/3m10.0s
+
+panel   [  61% ] 10/10 VUs  1m55.8s/3m10.0s
+
+panel   [  61% ] 10/10 VUs  1m56.8s/3m10.0s
+
+panel   [  62% ] 10/10 VUs  1m57.8s/3m10.0s
+
+panel   [  63% ] 10/10 VUs  1m58.8s/3m10.0s
+
+panel   [  63% ] 10/10 VUs  1m59.8s/3m10.0s
+
+panel   [  64% ] 10/10 VUs  2m00.8s/3m10.0s
+
+panel   [  64% ] 10/10 VUs  2m01.8s/3m10.0s
+
+panel   [  65% ] 10/10 VUs  2m02.8s/3m10.0s
+
+panel   [  65% ] 10/10 VUs  2m03.8s/3m10.0s
+
+panel   [  66% ] 10/10 VUs  2m04.8s/3m10.0s
+
+panel   [  66% ] 10/10 VUs  2m05.8s/3m10.0s
+
+panel   [  67% ] 10/10 VUs  2m06.8s/3m10.0s
+
+panel   [  67% ] 10/10 VUs  2m07.8s/3m10.0s
+
+panel   [  68% ] 10/10 VUs  2m08.8s/3m10.0s
+
+panel   [  68% ] 10/10 VUs  2m09.8s/3m10.0s
+
+panel   [  69% ] 10/10 VUs  2m10.8s/3m10.0s
+
+panel   [  69% ] 10/10 VUs  2m11.8s/3m10.0s
+
+panel   [  70% ] 10/10 VUs  2m12.8s/3m10.0s
+
+panel   [  70% ] 10/10 VUs  2m13.8s/3m10.0s
+
+panel   [  71% ] 10/10 VUs  2m14.8s/3m10.0s
+
+panel   [  71% ] 10/10 VUs  2m15.8s/3m10.0s
+
+panel   [  72% ] 10/10 VUs  2m16.8s/3m10.0s
+
+panel   [  73% ] 10/10 VUs  2m17.8s/3m10.0s
+
+panel   [  73% ] 10/10 VUs  2m18.8s/3m10.0s
+
+panel   [  74% ] 10/10 VUs  2m19.8s/3m10.0s
+
+panel   [  74% ] 10/10 VUs  2m20.8s/3m10.0s
+
+panel   [  75% ] 10/10 VUs  2m21.8s/3m10.0s
+
+panel   [  75% ] 10/10 VUs  2m22.8s/3m10.0s
+
+panel   [  76% ] 10/10 VUs  2m23.8s/3m10.0s
+
+panel   [  76% ] 10/10 VUs  2m24.8s/3m10.0s
+
+panel   [  77% ] 10/10 VUs  2m25.8s/3m10.0s
+
+panel   [  77% ] 10/10 VUs  2m26.8s/3m10.0s
+
+panel   [  78% ] 10/10 VUs  2m27.8s/3m10.0s
+
+panel   [  78% ] 10/10 VUs  2m28.8s/3m10.0s
+
+panel   [  79% ] 10/10 VUs  2m29.8s/3m10.0s
+
+panel   [  79% ] 10/10 VUs  2m30.8s/3m10.0s
+
+panel   [  80% ] 10/10 VUs  2m31.8s/3m10.0s
+
+panel   [  80% ] 10/10 VUs  2m32.8s/3m10.0s
+
+panel   [  81% ] 10/10 VUs  2m33.8s/3m10.0s
+
+panel   [  81% ] 10/10 VUs  2m34.8s/3m10.0s
+
+panel   [  82% ] 10/10 VUs  2m35.8s/3m10.0s
+
+panel   [  83% ] 10/10 VUs  2m36.8s/3m10.0s
+
+panel   [  83% ] 10/10 VUs  2m37.8s/3m10.0s
+
+panel   [  84% ] 10/10 VUs  2m38.8s/3m10.0s
+
+panel   [  84% ] 10/10 VUs  2m39.8s/3m10.0s
+
+panel   [  85% ] 10/10 VUs  2m40.8s/3m10.0s
+
+panel   [  85% ] 10/10 VUs  2m41.8s/3m10.0s
+
+panel   [  86% ] 10/10 VUs  2m42.8s/3m10.0s
+
+panel   [  86% ] 10/10 VUs  2m43.8s/3m10.0s
+
+panel   [  87% ] 10/10 VUs  2m44.8s/3m10.0s
+
+panel   [  87% ] 10/10 VUs  2m45.8s/3m10.0s
+
+panel   [  88% ] 10/10 VUs  2m46.8s/3m10.0s
+
+panel   [  88% ] 10/10 VUs  2m47.8s/3m10.0s
+
+panel   [  89% ] 10/10 VUs  2m48.8s/3m10.0s
+
+panel   [  89% ] 10/10 VUs  2m49.8s/3m10.0s
+
+panel   [  90% ] 10/10 VUs  2m50.8s/3m10.0s
+
+panel   [  90% ] 10/10 VUs  2m51.8s/3m10.0s
+
+panel   [  91% ] 10/10 VUs  2m52.8s/3m10.0s
+
+panel   [  91% ] 10/10 VUs  2m53.8s/3m10.0s
+
+panel   [  92% ] 10/10 VUs  2m54.8s/3m10.0s
+
+panel   [  93% ] 10/10 VUs  2m55.8s/3m10.0s
+
+panel   [  93% ] 10/10 VUs  2m56.8s/3m10.0s
+
+panel   [  94% ] 10/10 VUs  2m57.8s/3m10.0s
+
+panel   [  94% ] 10/10 VUs  2m58.8s/3m10.0s
+
+panel   [  95% ] 10/10 VUs  2m59.8s/3m10.0s
+
+panel   [  95% ] 10/10 VUs  3m00.8s/3m10.0s
+
+panel   [  96% ] 09/10 VUs  3m01.8s/3m10.0s
+
+panel   [  96% ] 09/10 VUs  3m02.8s/3m10.0s
+
+panel   [  97% ] 09/10 VUs  3m03.8s/3m10.0s
+
+panel   [  97% ] 06/10 VUs  3m04.8s/3m10.0s
+
+panel   [  98% ] 06/10 VUs  3m05.8s/3m10.0s
+
+panel   [  98% ] 06/10 VUs  3m06.8s/3m10.0s
+
+panel   [  99% ] 03/10 VUs  3m07.8s/3m10.0s
+
+panel   [  99% ] 03/10 VUs  3m08.8s/3m10.0s
+
+panel   [ 100% ] 03/10 VUs  3m09.8s/3m10.0s
+
+
+  █ THRESHOLDS 
+
+    http_req_duration{endpoint:panel}
+    ✓ 'p(95)<300' p(95)=34.67ms
+
+    http_req_failed{endpoint:panel}
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......................: 1016    5.323545/s
+    checks_succeeded...................: 100.00% 1016 out of 1016
+    checks_failed......................: 0.00%   0 out of 1016
+
+    ✓ status 200
+    ✓ trae datos
+
+    HTTP
+    http_req_duration.......................................................: avg=25.56ms min=13.48ms med=25.55ms p(90)=31.88ms p(95)=34.77ms p(99)=42.48ms max=228.23ms
+      { endpoint:panel }....................................................: avg=25.16ms min=13.48ms med=25.53ms p(90)=31.87ms p(95)=34.67ms p(99)=41.85ms max=51.78ms 
+      { expected_response:true }............................................: avg=25.56ms min=13.48ms med=25.55ms p(90)=31.88ms p(95)=34.77ms p(99)=42.48ms max=228.23ms
+    http_req_failed.........................................................: 0.00%  0 out of 509
+      { endpoint:panel }....................................................: 0.00%  0 out of 508
+    http_reqs...............................................................: 509    2.667012/s
+
+    EXECUTION
+    iteration_duration......................................................: avg=3.02s   min=3.01s   med=3.02s   p(90)=3.03s   p(95)=3.03s   p(99)=3.04s   max=3.05s   
+    iterations..............................................................: 508    2.661772/s
+    vus.....................................................................: 3      min=0        max=10
+    vus_max.................................................................: 10     min=10       max=10
+
+    NETWORK
+    data_received...........................................................: 4.6 MB 24 kB/s
+    data_sent...............................................................: 217 kB 1.1 kB/s
+
+
+
+
+panel ✓ [ 100% ] 00/10 VUs  3m10s
+exit=0

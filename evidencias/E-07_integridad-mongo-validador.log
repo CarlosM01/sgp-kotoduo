@@ -1,0 +1,12 @@
+# E-07 · Integridad MongoDB: validador de bitacora_eventos (criterio 3.1.2)
+# Fecha: 2026-11-24 13:40 -03 · rama: feat/f1-database · base: f562807 (correcciones de revisión sin commitear)
+# Comando: docker compose exec -T mongo mongosh --quiet sgp_docs --file /bd/pruebas_integridad.js
+
+--- Baseline: 2 eventos
+OK M-01 tipo de evento fuera del enum: rechazado por el validador (code 121: Document failed validation)
+OK M-02 falta el campo obligatorio actor: rechazado por el validador (code 121: Document failed validation)
+OK M-03 ts como texto en vez de fecha: rechazado por el validador (code 121: Document failed validation)
+OK M-04 campo no declarado (additionalProperties: false): rechazado por el validador (code 121: Document failed validation)
+--- Verificación: 2 eventos (antes 2), documentos inválidos guardados: 0
+RESULTADO: 4/4 rechazados
+# exit=0

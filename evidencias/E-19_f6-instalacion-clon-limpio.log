@@ -1,0 +1,334 @@
+# Prueba desde un clon limpio (F6, criterio 3.1.4)
+Fecha: 2026-11-26 17:18:12 -03
+SO: Ubuntu 24.04.5 LTS · kernel 7.0.0-44-generic
+Docker: Docker version 29.9.3, build 5457199 · Docker Compose version v5.0.2
+Volúmenes previos del proyecto clonado: 0
+
+## 1. Clonar
+
+$ git clone -q <repo> sgp-kotoduo-clon
+[exit 0]
+
+$ git switch -q feat/f6-entorno-docs
+[exit 0]
+
+$ git log --oneline -1
+743864d docs: add the install guide, the full endpoint table and a per-role user manual
+[exit 0]
+
+$ ls
+api
+db
+docker-compose.yml
+docs
+evidencias
+odd
+package.json
+package-lock.json
+README.md
+scripts
+web
+[exit 0]
+
+## 2. Configurar .env y generar JWT_SECRET
+
+$ cp .env.example .env
+[exit 0]
+$ openssl rand -base64 48   # valor omitido del log
+
+$ sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$SECRETO|" .env
+[exit 0]
+
+$ grep -c '^JWT_SECRET=replace_with' .env
+0
+[exit 1]
+
+## 3. Levantar el stack
+
+$ docker compose up -d --build --quiet-pull
+ Image sgp-kotoduo-api Building 
+ Image sgp-kotoduo-web Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.36kB done
+#1 DONE 0.0s
+
+#2 [api internal] load build definition from Dockerfile
+#2 transferring dockerfile:
+#2 transferring dockerfile: 921B done
+#2 DONE 0.0s
+
+#3 [web internal] load build definition from Dockerfile
+#3 transferring dockerfile: 860B done
+#3 DONE 0.0s
+
+#4 [web internal] load metadata for docker.io/library/node:24-slim
+#4 DONE 0.9s
+
+#5 [web internal] load metadata for docker.io/library/nginx:1.28-alpine
+#5 DONE 0.9s
+
+#6 [web internal] load .dockerignore
+#6 transferring context: 261B done
+#6 DONE 0.0s
+
+#7 [web build 1/8] FROM docker.io/library/node:24-slim@sha256:873f586f3794f52281bd039bf02c048a0be08fde619338f9941bad1eb6b34530
+#7 DONE 0.0s
+
+#8 [web stage-1 1/4] FROM docker.io/library/nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+#8 DONE 0.0s
+
+#9 [api internal] load build context
+#9 transferring context: 469.00kB 0.0s done
+#9 DONE 0.1s
+
+#10 [web internal] load build context
+#10 transferring context: 529.60kB 0.0s done
+#10 DONE 0.1s
+
+#11 [api stage-1 7/8] COPY --from=build /app/api/dist api/dist
+#11 CACHED
+
+#12 [api build 4/8] COPY api/package.json api/
+#12 CACHED
+
+#13 [api build 8/8] RUN npm run build -w api
+#13 CACHED
+
+#14 [api build 3/8] COPY package.json package-lock.json ./
+#14 CACHED
+
+#15 [api build 7/8] COPY api/ api/
+#15 CACHED
+
+#16 [api build 6/8] RUN npm ci --workspace api
+#16 CACHED
+
+#17 [api stage-1 6/8] RUN npm ci --omit=dev --workspace api && npm cache clean --force
+#17 CACHED
+
+#18 [api build 5/8] COPY web/package.json web/
+#18 CACHED
+
+#19 [api stage-1 8/8] WORKDIR /app/api
+#19 CACHED
+
+#20 [web build  6/10] RUN npm ci
+#20 CACHED
+
+#21 [web build  7/10] COPY api/src api/src
+#21 CACHED
+
+#22 [web build  4/10] COPY api/package.json api/
+#22 CACHED
+
+#23 [web build  5/10] COPY web/package.json web/
+#23 CACHED
+
+#24 [web build 2/8] WORKDIR /app
+#24 CACHED
+
+#25 [web build  3/10] COPY package.json package-lock.json ./
+#25 CACHED
+
+#26 [web build  8/10] COPY api/tsconfig.json api/
+#26 CACHED
+
+#27 [api] exporting to image
+#27 exporting layers done
+#27 writing image sha256:3e832efedb7881b8cf2ddcd230a8784c69095d4c9c292e2cebaf00dd0e744f7c done
+#27 naming to docker.io/library/sgp-kotoduo-api done
+#27 DONE 0.0s
+
+#28 [web build  9/10] COPY web/ web/
+#28 DONE 0.1s
+
+#29 [api] resolving provenance for metadata file
+#29 DONE 0.0s
+
+#30 [web build 10/10] RUN npm run build -w web
+#30 0.450 
+#30 0.450 > build
+#30 0.450 > tsc --noEmit && vite build
+#30 0.450 
+#30 5.238 vite v8.3.8 building client environment for production...
+#30 5.254 transforming...
+#30 5.393 ✓ 211 modules transformed.
+#30 5.464 rendering chunks...
+#30 5.574 computing gzip size...
+#30 5.589 dist/index.html                   0.46 kB │ gzip:   0.29 kB
+#30 5.589 dist/assets/index-Bij4e49h.css   16.31 kB │ gzip:   4.21 kB
+#30 5.589 dist/assets/index-DKTmcJAl.js   413.06 kB │ gzip: 125.63 kB
+#30 5.589 
+#30 5.591 ✓ built in 350ms
+#30 DONE 5.7s
+
+#31 [web stage-1 2/4] COPY web/nginx/default.conf /etc/nginx/conf.d/default.conf
+#31 CACHED
+
+#32 [web stage-1 3/4] COPY web/nginx/cabeceras-seguridad.conf /etc/nginx/snippets/cabeceras-seguridad.conf
+#32 CACHED
+
+#33 [web stage-1 4/4] COPY --from=build /app/web/dist /usr/share/nginx/html
+#33 CACHED
+
+#34 [web] exporting to image
+#34 exporting layers done
+#34 writing image sha256:11d9ef431b8eb830444b924a319f7e7ddfeaf88e300aa2af512c18823b66e57b done
+#34 naming to docker.io/library/sgp-kotoduo-web 0.0s done
+#34 DONE 0.0s
+
+#35 [web] resolving provenance for metadata file
+#35 DONE 0.0s
+ Image sgp-kotoduo-api Built 
+ Image sgp-kotoduo-web Built 
+ Network sgp-kotoduo-clon_default Creating 
+ Network sgp-kotoduo-clon_default Created 
+ Volume sgp-kotoduo-clon_mongo_data Creating 
+ Volume sgp-kotoduo-clon_mongo_data Created 
+ Volume sgp-kotoduo-clon_pg_data Creating 
+ Volume sgp-kotoduo-clon_pg_data Created 
+ Container sgp-postgres Creating 
+ Container sgp-mongo Creating 
+ Container sgp-postgres Created 
+ Container sgp-mongo Created 
+ Container sgp-api Creating 
+ Container sgp-api Created 
+ Container sgp-web Creating 
+ Container sgp-web Created 
+ Container sgp-mongo Starting 
+ Container sgp-postgres Starting 
+ Container sgp-mongo Started 
+ Container sgp-postgres Started 
+ Container sgp-postgres Waiting 
+ Container sgp-mongo Waiting 
+ Container sgp-postgres Healthy 
+ Container sgp-mongo Healthy 
+ Container sgp-api Starting 
+ Container sgp-api Started 
+ Container sgp-api Waiting 
+ Container sgp-api Healthy 
+ Container sgp-web Starting 
+ Container sgp-web Started 
+[exit 0]
+
+$ docker compose ps --format '{{.Name}}\t{{.Status}}'
+sgp-api	Up 6 seconds (healthy)
+sgp-mongo	Up 17 seconds (healthy)
+sgp-postgres	Up 17 seconds (healthy)
+sgp-web	Up Less than a second (health: starting)
+[exit 0]
+Tiempo de construcción y arranque: 25 s
+
+## 4. Verificar con DEMO-01
+
+$ curl -s http://localhost:8080/api/v1/health
+{"status":"ok"}[exit 0]
+
+$ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/
+200
+[exit 0]
+
+$ curl -s -X POST http://localhost:8080/api/v1/auth/login -H 'Content-Type: application/json' -d '{"nombreUsuario":"encargada","clave":"kotoduo demo local 2026"}' | grep -o '"accessToken":"[^.]*' | sed 's/:"\(.*\)/: \1… (token recibido)/'
+"accessToken": eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9… (token recibido)
+[exit 0]
+
+$ docker compose exec -T postgres psql -U sgp -d sgp_kotoduo -c "SELECT codigo, titulo, estado FROM sgp.orden_trabajo WHERE codigo = 'OT-2026-0001';"
+    codigo    |                       titulo                       |    estado     
+--------------+----------------------------------------------------+---------------
+ OT-2026-0001 | DEMO-01 · Camisetas sublimadas Club Deportivo Demo | EN_PRODUCCION
+(1 row)
+
+[exit 0]
+
+$ docker compose exec -T mongo mongosh --quiet sgp_docs --eval 'db.bitacora_eventos.countDocuments({ tipo: "ORDEN_REGISTRADA" })'
+1
+[exit 0]
+
+## 5. Control: la API rechaza el JWT_SECRET de ejemplo en producción
+
+$ sed -i 's|^JWT_SECRET=.*|JWT_SECRET=replace_with_a_long_random_string|' .env
+[exit 0]
+
+$ docker compose up -d api
+ Container sgp-postgres Running 
+ Container sgp-mongo Running 
+ Container sgp-api Recreate 
+ Container sgp-api Recreated 
+ Container sgp-postgres Waiting 
+ Container sgp-mongo Waiting 
+ Container sgp-postgres Healthy 
+ Container sgp-mongo Healthy 
+ Container sgp-api Starting 
+ Container sgp-api Started 
+[exit 0]
+
+$ docker compose logs api --since 10s | grep -m1 'Invalid configuration'
+sgp-api  |             throw new Error('Invalid configuration: JWT_SECRET still has the .env.example placeholder');
+[exit 0]
+
+$ sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$SECRETO|" .env
+[exit 0]
+
+$ docker compose up -d --wait
+ Container sgp-postgres Running 
+ Container sgp-mongo Running 
+ Container sgp-api Recreate 
+ Container sgp-api Recreated 
+ Container sgp-web Running 
+ Container sgp-postgres Waiting 
+ Container sgp-mongo Waiting 
+ Container sgp-postgres Healthy 
+ Container sgp-mongo Healthy 
+ Container sgp-api Starting 
+ Container sgp-api Started 
+ Container sgp-api Waiting 
+ Container sgp-api Healthy 
+ Container sgp-mongo Waiting 
+ Container sgp-api Waiting 
+ Container sgp-web Waiting 
+ Container sgp-postgres Waiting 
+ Container sgp-mongo Healthy 
+ Container sgp-web Healthy 
+ Container sgp-api Healthy 
+ Container sgp-postgres Healthy 
+[exit 0]
+
+$ docker compose ps --format '{{.Name}}\t{{.Status}}'
+sgp-api	Up 6 seconds (healthy)
+sgp-mongo	Up 32 seconds (healthy)
+sgp-postgres	Up 32 seconds (healthy)
+sgp-web	Up 14 seconds (healthy)
+[exit 0]
+
+## 6. Búsqueda de rutas personales y secretos en el repositorio
+
+$ git grep -nE '/home/|/Users/|C:\\\\Users' -- . ':!*.log' | wc -l
+0
+[exit 0]
+
+$ git grep -nIE '(BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,})' | wc -l
+0
+[exit 0]
+
+$ git ls-files | grep -E '(^|/)\.env$' | wc -l
+0
+[exit 0]
+
+## 7. Construcción sin caché (descarta la caché de capas del equipo)
+$ docker compose build --no-cache
+[exit 0]
+#21 3.814 added 101 packages, and audited 103 packages in 3s
+#22 7.504 added 295 packages, and audited 297 packages in 7s
+#20 9.683 added 368 packages, and audited 371 packages in 9s
+#28 6.570 ✓ built in 358ms
+ Image sgp-kotoduo-api Built 
+ Image sgp-kotoduo-web Built 
+Tiempo: 18 s
+$ docker compose up -d --wait
+[exit 0]
+sgp-api	Up 11 seconds (healthy)
+sgp-mongo	Up About a minute (healthy)
+sgp-postgres	Up About a minute (healthy)
+sgp-web	Up 5 seconds (healthy)
+$ curl -s http://localhost:8080/api/v1/health
+{"status":"ok"}

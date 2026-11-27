@@ -5,11 +5,14 @@
     "node": ">=24"
   },
   "workspaces": [
-    "api"
+    "api",
+    "web"
   ],
   "scripts": {
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "verify": "node scripts/verify.mjs",
+    "test:integracion": "npm run test:integracion --workspaces --if-present"
   }
 }

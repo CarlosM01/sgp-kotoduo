@@ -1,0 +1,54 @@
+# E-25 — CP-34 (deseable): diseño responsive de las 8 pantallas del MVP
+# Versión: v0.9 (df19bbc) · Fecha: 2026-11-26 18:41 -0300 · Stack Docker local (http://localhost:8080), Chrome del sistema (Playwright 1.65.1)
+# Comando: cd web && CP34_ADMIN=t.cp34adm E2E_BASE_URL=http://localhost:8080 npx playwright test e2e/responsive.spec.ts
+# Usuarios: encargada (P-06, P-04a, P-04, P-03, P-08), operario (P-02), sin sesión (P-01) y t.cp34adm (P-10).
+#   t.cp34adm: Administrador temporal creado para esta corrida con el hash de la contraseña de demo (el admin del seed debe cambiar su clave, D12);
+#   se borró al terminar junto con su único evento en bitacora_eventos (su ingreso). Su ingreso aparece en la captura P-10.
+# Viewports: 360x800 y 1280x800 (ES2 pide 360x800, 390x844, 768x1024 y 1366x768).
+# Aserción: document.documentElement.scrollWidth <= window.innerWidth. Posición de nav.nav: inferior (ancho >= 90 % y en la mitad baja) o lateral (borde izquierdo, < 50 % del ancho, > 50 % del alto).
+
+
+Running 1 test using 1 worker
+
+P-01_ingresar        360x800   scrollWidth=360 innerWidth=360 body=360 navegación=sin navegación OK
+P-01_ingresar        1280x800  scrollWidth=1280 innerWidth=1280 body=1280 navegación=sin navegación OK
+P-06_panel           360x800   scrollWidth=360 innerWidth=360 body=360 navegación=inferior OK
+P-06_panel           1280x800  scrollWidth=1280 innerWidth=1280 body=1280 navegación=lateral OK
+P-04a_ordenes        360x800   scrollWidth=360 innerWidth=360 body=360 navegación=inferior OK
+P-04a_ordenes        1280x800  scrollWidth=1280 innerWidth=1280 body=1280 navegación=lateral OK
+P-04_ordenes-nueva   360x800   scrollWidth=360 innerWidth=360 body=360 navegación=inferior OK
+P-04_ordenes-nueva   1280x800  scrollWidth=1280 innerWidth=1280 body=1280 navegación=lateral OK
+P-03_detalle-orden   360x800   scrollWidth=360 innerWidth=360 body=360 navegación=inferior OK
+P-03_detalle-orden   1280x800  scrollWidth=1280 innerWidth=1280 body=1280 navegación=lateral OK
+P-08_insumos         360x800   scrollWidth=360 innerWidth=360 body=360 navegación=inferior OK
+P-08_insumos         1280x800  scrollWidth=1280 innerWidth=1280 body=1280 navegación=lateral OK
+P-02_mi-trabajo      360x800   scrollWidth=360 innerWidth=360 body=360 navegación=inferior OK
+P-02_mi-trabajo      1280x800  scrollWidth=1280 innerWidth=1280 body=1280 navegación=lateral OK
+P-10_bitacora        360x800   scrollWidth=360 innerWidth=360 body=360 navegación=inferior OK
+P-10_bitacora        1280x800  scrollWidth=1280 innerWidth=1280 body=1280 navegación=lateral OK
+total=16 desbordes=0 []
+  ✓  1 e2e/responsive.spec.ts:55:1 › CP-34: the 8 MVP screens have no horizontal scroll at 360×800 and 1280×800 (13.9s)
+
+  1 passed (15.3s)
+
+== Capturas (evidencias/E-25_cp34-responsive/) ==
+P-01_ingresar_1280x800.png
+P-01_ingresar_360x800.png
+P-02_mi-trabajo_1280x800.png
+P-02_mi-trabajo_360x800.png
+P-03_detalle-orden_1280x800.png
+P-03_detalle-orden_360x800.png
+P-04a_ordenes_1280x800.png
+P-04a_ordenes_360x800.png
+P-04_ordenes-nueva_1280x800.png
+P-04_ordenes-nueva_360x800.png
+P-06_panel_1280x800.png
+P-06_panel_360x800.png
+P-08_insumos_1280x800.png
+P-08_insumos_360x800.png
+P-10_bitacora_1280x800.png
+P-10_bitacora_360x800.png
+
+== Comparación con ES2 (Tabla L.5, CP-34) ==
+Esperado: 0 desbordes horizontales; navegación inferior en < 600 px y lateral en >= 1024 px.
+Obtenido: 16/16 combinaciones sin desborde (scrollWidth = innerWidth); navegación inferior en 7/7 pantallas con sesión a 360 px y lateral en 7/7 a 1280 px; P-01 no tiene navegación (pantalla de acceso).

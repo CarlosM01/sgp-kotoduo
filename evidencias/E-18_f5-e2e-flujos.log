@@ -1,0 +1,12 @@
+SGP-Kotoduo - E2E flujos 1-4 (Playwright, Chrome del sistema, headless)
+Fecha: 2026-11-25 21:22:47 -03
+Commit base: 09d86bf (rama feat/f5-frontend); el spec e2e/flujos.spec.ts se versiona en el commit siguiente
+Node: v24.22.2 · Google Chrome 157.0.8103.78 
+Comando: npm run test:e2e -w web
+
+
+Running 1 test using 1 worker
+
+  ✓  1 e2e/flujos.spec.ts:28:1 › flows 1–4 from the browser: create, assign, advance, panel and supply alert (15.8s)
+
+  1 passed (17.8s)

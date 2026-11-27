@@ -1,0 +1,804 @@
+# E-29 · CP-20 (reducido) · v0.9 (7993d66) · 2026-11-26 18:45:37 -03 · stack Docker vía nginx :8080 · k6 1.0.0 (imagen grafana/k6:1.0.0)
+# 12 VU, rampa 1 min, 5 min sostenido, GET /mi-trabajo cada 3 s por VU (ver encabezado de scripts/k6/cp20-mi-trabajo.js)
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: /k6/cp20-mi-trabajo.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 12 max VUs, 6m15s max duration (incl. graceful stop):
+              * mi_trabajo: Up to 12 looping VUs for 6m10s over 3 stages (gracefulRampDown: 5s, gracefulStop: 30s)
+
+
+mi_trabajo   [   0% ] 00/12 VUs  0m00.9s/6m10.0s
+
+mi_trabajo   [   1% ] 00/12 VUs  0m01.9s/6m10.0s
+
+mi_trabajo   [   1% ] 00/12 VUs  0m02.9s/6m10.0s
+
+mi_trabajo   [   1% ] 00/12 VUs  0m03.9s/6m10.0s
+
+mi_trabajo   [   1% ] 00/12 VUs  0m04.9s/6m10.0s
+
+mi_trabajo   [   2% ] 01/12 VUs  0m05.9s/6m10.0s
+
+mi_trabajo   [   2% ] 01/12 VUs  0m06.9s/6m10.0s
+
+mi_trabajo   [   2% ] 01/12 VUs  0m07.9s/6m10.0s
+
+mi_trabajo   [   2% ] 01/12 VUs  0m08.9s/6m10.0s
+
+mi_trabajo   [   3% ] 01/12 VUs  0m09.9s/6m10.0s
+
+mi_trabajo   [   3% ] 02/12 VUs  0m10.9s/6m10.0s
+
+mi_trabajo   [   3% ] 02/12 VUs  0m11.9s/6m10.0s
+
+mi_trabajo   [   3% ] 02/12 VUs  0m12.9s/6m10.0s
+
+mi_trabajo   [   4% ] 02/12 VUs  0m13.9s/6m10.0s
+
+mi_trabajo   [   4% ] 02/12 VUs  0m14.9s/6m10.0s
+
+mi_trabajo   [   4% ] 03/12 VUs  0m15.9s/6m10.0s
+
+mi_trabajo   [   5% ] 03/12 VUs  0m16.9s/6m10.0s
+
+mi_trabajo   [   5% ] 03/12 VUs  0m17.9s/6m10.0s
+
+mi_trabajo   [   5% ] 03/12 VUs  0m18.9s/6m10.0s
+
+mi_trabajo   [   5% ] 03/12 VUs  0m19.9s/6m10.0s
+
+mi_trabajo   [   6% ] 04/12 VUs  0m20.9s/6m10.0s
+
+mi_trabajo   [   6% ] 04/12 VUs  0m21.9s/6m10.0s
+
+mi_trabajo   [   6% ] 04/12 VUs  0m22.9s/6m10.0s
+
+mi_trabajo   [   6% ] 04/12 VUs  0m23.9s/6m10.0s
+
+mi_trabajo   [   7% ] 04/12 VUs  0m24.9s/6m10.0s
+
+mi_trabajo   [   7% ] 05/12 VUs  0m25.9s/6m10.0s
+
+mi_trabajo   [   7% ] 05/12 VUs  0m26.9s/6m10.0s
+
+mi_trabajo   [   8% ] 05/12 VUs  0m27.9s/6m10.0s
+
+mi_trabajo   [   8% ] 05/12 VUs  0m28.9s/6m10.0s
+
+mi_trabajo   [   8% ] 05/12 VUs  0m29.9s/6m10.0s
+
+mi_trabajo   [   8% ] 06/12 VUs  0m30.9s/6m10.0s
+
+mi_trabajo   [   9% ] 06/12 VUs  0m31.9s/6m10.0s
+
+mi_trabajo   [   9% ] 06/12 VUs  0m32.9s/6m10.0s
+
+mi_trabajo   [   9% ] 06/12 VUs  0m33.9s/6m10.0s
+
+mi_trabajo   [   9% ] 06/12 VUs  0m34.9s/6m10.0s
+
+mi_trabajo   [  10% ] 07/12 VUs  0m35.9s/6m10.0s
+
+mi_trabajo   [  10% ] 07/12 VUs  0m36.9s/6m10.0s
+
+mi_trabajo   [  10% ] 07/12 VUs  0m37.9s/6m10.0s
+
+mi_trabajo   [  11% ] 07/12 VUs  0m38.9s/6m10.0s
+
+mi_trabajo   [  11% ] 07/12 VUs  0m39.9s/6m10.0s
+
+mi_trabajo   [  11% ] 08/12 VUs  0m40.9s/6m10.0s
+
+mi_trabajo   [  11% ] 08/12 VUs  0m41.9s/6m10.0s
+
+mi_trabajo   [  12% ] 08/12 VUs  0m42.9s/6m10.0s
+
+mi_trabajo   [  12% ] 08/12 VUs  0m43.9s/6m10.0s
+
+mi_trabajo   [  12% ] 08/12 VUs  0m44.9s/6m10.0s
+
+mi_trabajo   [  12% ] 09/12 VUs  0m45.9s/6m10.0s
+
+mi_trabajo   [  13% ] 09/12 VUs  0m46.9s/6m10.0s
+
+mi_trabajo   [  13% ] 09/12 VUs  0m47.9s/6m10.0s
+
+mi_trabajo   [  13% ] 09/12 VUs  0m48.9s/6m10.0s
+
+mi_trabajo   [  13% ] 09/12 VUs  0m49.9s/6m10.0s
+
+mi_trabajo   [  14% ] 10/12 VUs  0m50.9s/6m10.0s
+
+mi_trabajo   [  14% ] 10/12 VUs  0m51.9s/6m10.0s
+
+mi_trabajo   [  14% ] 10/12 VUs  0m52.9s/6m10.0s
+
+mi_trabajo   [  15% ] 10/12 VUs  0m53.9s/6m10.0s
+
+mi_trabajo   [  15% ] 10/12 VUs  0m54.9s/6m10.0s
+
+mi_trabajo   [  15% ] 11/12 VUs  0m55.9s/6m10.0s
+
+mi_trabajo   [  15% ] 11/12 VUs  0m56.9s/6m10.0s
+
+mi_trabajo   [  16% ] 11/12 VUs  0m57.9s/6m10.0s
+
+mi_trabajo   [  16% ] 11/12 VUs  0m58.9s/6m10.0s
+
+mi_trabajo   [  16% ] 11/12 VUs  0m59.9s/6m10.0s
+
+mi_trabajo   [  16% ] 12/12 VUs  1m00.9s/6m10.0s
+
+mi_trabajo   [  17% ] 12/12 VUs  1m01.9s/6m10.0s
+
+mi_trabajo   [  17% ] 12/12 VUs  1m02.9s/6m10.0s
+
+mi_trabajo   [  17% ] 12/12 VUs  1m03.9s/6m10.0s
+
+mi_trabajo   [  18% ] 12/12 VUs  1m04.9s/6m10.0s
+
+mi_trabajo   [  18% ] 12/12 VUs  1m05.9s/6m10.0s
+
+mi_trabajo   [  18% ] 12/12 VUs  1m06.9s/6m10.0s
+
+mi_trabajo   [  18% ] 12/12 VUs  1m07.9s/6m10.0s
+
+mi_trabajo   [  19% ] 12/12 VUs  1m08.9s/6m10.0s
+
+mi_trabajo   [  19% ] 12/12 VUs  1m09.9s/6m10.0s
+
+mi_trabajo   [  19% ] 12/12 VUs  1m10.9s/6m10.0s
+
+mi_trabajo   [  19% ] 12/12 VUs  1m11.9s/6m10.0s
+
+mi_trabajo   [  20% ] 12/12 VUs  1m12.9s/6m10.0s
+
+mi_trabajo   [  20% ] 12/12 VUs  1m13.9s/6m10.0s
+
+mi_trabajo   [  20% ] 12/12 VUs  1m14.9s/6m10.0s
+
+mi_trabajo   [  21% ] 12/12 VUs  1m15.9s/6m10.0s
+
+mi_trabajo   [  21% ] 12/12 VUs  1m16.9s/6m10.0s
+
+mi_trabajo   [  21% ] 12/12 VUs  1m17.9s/6m10.0s
+
+mi_trabajo   [  21% ] 12/12 VUs  1m18.9s/6m10.0s
+
+mi_trabajo   [  22% ] 12/12 VUs  1m19.9s/6m10.0s
+
+mi_trabajo   [  22% ] 12/12 VUs  1m20.9s/6m10.0s
+
+mi_trabajo   [  22% ] 12/12 VUs  1m21.9s/6m10.0s
+
+mi_trabajo   [  22% ] 12/12 VUs  1m22.9s/6m10.0s
+
+mi_trabajo   [  23% ] 12/12 VUs  1m23.9s/6m10.0s
+
+mi_trabajo   [  23% ] 12/12 VUs  1m24.9s/6m10.0s
+
+mi_trabajo   [  23% ] 12/12 VUs  1m25.9s/6m10.0s
+
+mi_trabajo   [  23% ] 12/12 VUs  1m26.9s/6m10.0s
+
+mi_trabajo   [  24% ] 12/12 VUs  1m27.9s/6m10.0s
+
+mi_trabajo   [  24% ] 12/12 VUs  1m28.9s/6m10.0s
+
+mi_trabajo   [  24% ] 12/12 VUs  1m29.9s/6m10.0s
+
+mi_trabajo   [  25% ] 12/12 VUs  1m30.9s/6m10.0s
+
+mi_trabajo   [  25% ] 12/12 VUs  1m31.9s/6m10.0s
+
+mi_trabajo   [  25% ] 12/12 VUs  1m32.9s/6m10.0s
+
+mi_trabajo   [  25% ] 12/12 VUs  1m33.9s/6m10.0s
+
+mi_trabajo   [  26% ] 12/12 VUs  1m34.9s/6m10.0s
+
+mi_trabajo   [  26% ] 12/12 VUs  1m35.9s/6m10.0s
+
+mi_trabajo   [  26% ] 12/12 VUs  1m36.9s/6m10.0s
+
+mi_trabajo   [  26% ] 12/12 VUs  1m37.9s/6m10.0s
+
+mi_trabajo   [  27% ] 12/12 VUs  1m38.9s/6m10.0s
+
+mi_trabajo   [  27% ] 12/12 VUs  1m39.9s/6m10.0s
+
+mi_trabajo   [  27% ] 12/12 VUs  1m40.9s/6m10.0s
+
+mi_trabajo   [  28% ] 12/12 VUs  1m41.9s/6m10.0s
+
+mi_trabajo   [  28% ] 12/12 VUs  1m42.9s/6m10.0s
+
+mi_trabajo   [  28% ] 12/12 VUs  1m43.9s/6m10.0s
+
+mi_trabajo   [  28% ] 12/12 VUs  1m44.9s/6m10.0s
+
+mi_trabajo   [  29% ] 12/12 VUs  1m45.9s/6m10.0s
+
+mi_trabajo   [  29% ] 12/12 VUs  1m46.9s/6m10.0s
+
+mi_trabajo   [  29% ] 12/12 VUs  1m47.9s/6m10.0s
+
+mi_trabajo   [  29% ] 12/12 VUs  1m48.9s/6m10.0s
+
+mi_trabajo   [  30% ] 12/12 VUs  1m49.9s/6m10.0s
+
+mi_trabajo   [  30% ] 12/12 VUs  1m50.9s/6m10.0s
+
+mi_trabajo   [  30% ] 12/12 VUs  1m51.9s/6m10.0s
+
+mi_trabajo   [  31% ] 12/12 VUs  1m52.9s/6m10.0s
+
+mi_trabajo   [  31% ] 12/12 VUs  1m53.9s/6m10.0s
+
+mi_trabajo   [  31% ] 12/12 VUs  1m54.9s/6m10.0s
+
+mi_trabajo   [  31% ] 12/12 VUs  1m55.9s/6m10.0s
+
+mi_trabajo   [  32% ] 12/12 VUs  1m56.9s/6m10.0s
+
+mi_trabajo   [  32% ] 12/12 VUs  1m57.9s/6m10.0s
+
+mi_trabajo   [  32% ] 12/12 VUs  1m58.9s/6m10.0s
+
+mi_trabajo   [  32% ] 12/12 VUs  1m59.9s/6m10.0s
+
+mi_trabajo   [  33% ] 12/12 VUs  2m00.9s/6m10.0s
+
+mi_trabajo   [  33% ] 12/12 VUs  2m01.9s/6m10.0s
+
+mi_trabajo   [  33% ] 12/12 VUs  2m02.9s/6m10.0s
+
+mi_trabajo   [  33% ] 12/12 VUs  2m03.9s/6m10.0s
+
+mi_trabajo   [  34% ] 12/12 VUs  2m04.9s/6m10.0s
+
+mi_trabajo   [  34% ] 12/12 VUs  2m05.9s/6m10.0s
+
+mi_trabajo   [  34% ] 12/12 VUs  2m06.9s/6m10.0s
+
+mi_trabajo   [  35% ] 12/12 VUs  2m07.9s/6m10.0s
+
+mi_trabajo   [  35% ] 12/12 VUs  2m08.9s/6m10.0s
+
+mi_trabajo   [  35% ] 12/12 VUs  2m09.9s/6m10.0s
+
+mi_trabajo   [  35% ] 12/12 VUs  2m10.9s/6m10.0s
+
+mi_trabajo   [  36% ] 12/12 VUs  2m11.9s/6m10.0s
+
+mi_trabajo   [  36% ] 12/12 VUs  2m12.9s/6m10.0s
+
+mi_trabajo   [  36% ] 12/12 VUs  2m13.9s/6m10.0s
+
+mi_trabajo   [  36% ] 12/12 VUs  2m14.9s/6m10.0s
+
+mi_trabajo   [  37% ] 12/12 VUs  2m15.9s/6m10.0s
+
+mi_trabajo   [  37% ] 12/12 VUs  2m16.9s/6m10.0s
+
+mi_trabajo   [  37% ] 12/12 VUs  2m17.9s/6m10.0s
+
+mi_trabajo   [  38% ] 12/12 VUs  2m18.9s/6m10.0s
+
+mi_trabajo   [  38% ] 12/12 VUs  2m19.9s/6m10.0s
+
+mi_trabajo   [  38% ] 12/12 VUs  2m20.9s/6m10.0s
+
+mi_trabajo   [  38% ] 12/12 VUs  2m21.9s/6m10.0s
+
+mi_trabajo   [  39% ] 12/12 VUs  2m22.9s/6m10.0s
+
+mi_trabajo   [  39% ] 12/12 VUs  2m23.9s/6m10.0s
+
+mi_trabajo   [  39% ] 12/12 VUs  2m24.9s/6m10.0s
+
+mi_trabajo   [  39% ] 12/12 VUs  2m25.9s/6m10.0s
+
+mi_trabajo   [  40% ] 12/12 VUs  2m26.9s/6m10.0s
+
+mi_trabajo   [  40% ] 12/12 VUs  2m27.9s/6m10.0s
+
+mi_trabajo   [  40% ] 12/12 VUs  2m28.9s/6m10.0s
+
+mi_trabajo   [  41% ] 12/12 VUs  2m29.9s/6m10.0s
+
+mi_trabajo   [  41% ] 12/12 VUs  2m30.9s/6m10.0s
+
+mi_trabajo   [  41% ] 12/12 VUs  2m31.9s/6m10.0s
+
+mi_trabajo   [  41% ] 12/12 VUs  2m32.9s/6m10.0s
+
+mi_trabajo   [  42% ] 12/12 VUs  2m33.9s/6m10.0s
+
+mi_trabajo   [  42% ] 12/12 VUs  2m34.9s/6m10.0s
+
+mi_trabajo   [  42% ] 12/12 VUs  2m35.9s/6m10.0s
+
+mi_trabajo   [  42% ] 12/12 VUs  2m36.9s/6m10.0s
+
+mi_trabajo   [  43% ] 12/12 VUs  2m37.9s/6m10.0s
+
+mi_trabajo   [  43% ] 12/12 VUs  2m38.9s/6m10.0s
+
+mi_trabajo   [  43% ] 12/12 VUs  2m39.9s/6m10.0s
+
+mi_trabajo   [  43% ] 12/12 VUs  2m40.9s/6m10.0s
+
+mi_trabajo   [  44% ] 12/12 VUs  2m41.9s/6m10.0s
+
+mi_trabajo   [  44% ] 12/12 VUs  2m42.9s/6m10.0s
+
+mi_trabajo   [  44% ] 12/12 VUs  2m43.9s/6m10.0s
+
+mi_trabajo   [  45% ] 12/12 VUs  2m44.9s/6m10.0s
+
+mi_trabajo   [  45% ] 12/12 VUs  2m45.9s/6m10.0s
+
+mi_trabajo   [  45% ] 12/12 VUs  2m46.9s/6m10.0s
+
+mi_trabajo   [  45% ] 12/12 VUs  2m47.9s/6m10.0s
+
+mi_trabajo   [  46% ] 12/12 VUs  2m48.9s/6m10.0s
+
+mi_trabajo   [  46% ] 12/12 VUs  2m49.9s/6m10.0s
+
+mi_trabajo   [  46% ] 12/12 VUs  2m50.9s/6m10.0s
+
+mi_trabajo   [  46% ] 12/12 VUs  2m51.9s/6m10.0s
+
+mi_trabajo   [  47% ] 12/12 VUs  2m52.9s/6m10.0s
+
+mi_trabajo   [  47% ] 12/12 VUs  2m53.9s/6m10.0s
+
+mi_trabajo   [  47% ] 12/12 VUs  2m54.9s/6m10.0s
+
+mi_trabajo   [  48% ] 12/12 VUs  2m55.9s/6m10.0s
+
+mi_trabajo   [  48% ] 12/12 VUs  2m56.9s/6m10.0s
+
+mi_trabajo   [  48% ] 12/12 VUs  2m57.9s/6m10.0s
+
+mi_trabajo   [  48% ] 12/12 VUs  2m58.9s/6m10.0s
+
+mi_trabajo   [  49% ] 12/12 VUs  2m59.9s/6m10.0s
+
+mi_trabajo   [  49% ] 12/12 VUs  3m00.9s/6m10.0s
+
+mi_trabajo   [  49% ] 12/12 VUs  3m01.9s/6m10.0s
+
+mi_trabajo   [  49% ] 12/12 VUs  3m02.9s/6m10.0s
+
+mi_trabajo   [  50% ] 12/12 VUs  3m03.9s/6m10.0s
+
+mi_trabajo   [  50% ] 12/12 VUs  3m04.9s/6m10.0s
+
+mi_trabajo   [  50% ] 12/12 VUs  3m05.9s/6m10.0s
+
+mi_trabajo   [  51% ] 12/12 VUs  3m06.9s/6m10.0s
+
+mi_trabajo   [  51% ] 12/12 VUs  3m07.9s/6m10.0s
+
+mi_trabajo   [  51% ] 12/12 VUs  3m08.9s/6m10.0s
+
+mi_trabajo   [  51% ] 12/12 VUs  3m09.9s/6m10.0s
+
+mi_trabajo   [  52% ] 12/12 VUs  3m10.9s/6m10.0s
+
+mi_trabajo   [  52% ] 12/12 VUs  3m11.9s/6m10.0s
+
+mi_trabajo   [  52% ] 12/12 VUs  3m12.9s/6m10.0s
+
+mi_trabajo   [  52% ] 12/12 VUs  3m13.9s/6m10.0s
+
+mi_trabajo   [  53% ] 12/12 VUs  3m14.9s/6m10.0s
+
+mi_trabajo   [  53% ] 12/12 VUs  3m15.9s/6m10.0s
+
+mi_trabajo   [  53% ] 12/12 VUs  3m16.9s/6m10.0s
+
+mi_trabajo   [  53% ] 12/12 VUs  3m17.9s/6m10.0s
+
+mi_trabajo   [  54% ] 12/12 VUs  3m18.9s/6m10.0s
+
+mi_trabajo   [  54% ] 12/12 VUs  3m19.9s/6m10.0s
+
+mi_trabajo   [  54% ] 12/12 VUs  3m20.9s/6m10.0s
+
+mi_trabajo   [  55% ] 12/12 VUs  3m21.9s/6m10.0s
+
+mi_trabajo   [  55% ] 12/12 VUs  3m22.9s/6m10.0s
+
+mi_trabajo   [  55% ] 12/12 VUs  3m23.9s/6m10.0s
+
+mi_trabajo   [  55% ] 12/12 VUs  3m24.9s/6m10.0s
+
+mi_trabajo   [  56% ] 12/12 VUs  3m25.9s/6m10.0s
+
+mi_trabajo   [  56% ] 12/12 VUs  3m26.9s/6m10.0s
+
+mi_trabajo   [  56% ] 12/12 VUs  3m27.9s/6m10.0s
+
+mi_trabajo   [  56% ] 12/12 VUs  3m28.9s/6m10.0s
+
+mi_trabajo   [  57% ] 12/12 VUs  3m29.9s/6m10.0s
+
+mi_trabajo   [  57% ] 12/12 VUs  3m30.9s/6m10.0s
+
+mi_trabajo   [  57% ] 12/12 VUs  3m31.9s/6m10.0s
+
+mi_trabajo   [  58% ] 12/12 VUs  3m32.9s/6m10.0s
+
+mi_trabajo   [  58% ] 12/12 VUs  3m33.9s/6m10.0s
+
+mi_trabajo   [  58% ] 12/12 VUs  3m34.9s/6m10.0s
+
+mi_trabajo   [  58% ] 12/12 VUs  3m35.9s/6m10.0s
+
+mi_trabajo   [  59% ] 12/12 VUs  3m36.9s/6m10.0s
+
+mi_trabajo   [  59% ] 12/12 VUs  3m37.9s/6m10.0s
+
+mi_trabajo   [  59% ] 12/12 VUs  3m38.9s/6m10.0s
+
+mi_trabajo   [  59% ] 12/12 VUs  3m39.9s/6m10.0s
+
+mi_trabajo   [  60% ] 12/12 VUs  3m40.9s/6m10.0s
+
+mi_trabajo   [  60% ] 12/12 VUs  3m41.9s/6m10.0s
+
+mi_trabajo   [  60% ] 12/12 VUs  3m42.9s/6m10.0s
+
+mi_trabajo   [  61% ] 12/12 VUs  3m43.9s/6m10.0s
+
+mi_trabajo   [  61% ] 12/12 VUs  3m44.9s/6m10.0s
+
+mi_trabajo   [  61% ] 12/12 VUs  3m45.9s/6m10.0s
+
+mi_trabajo   [  61% ] 12/12 VUs  3m46.9s/6m10.0s
+
+mi_trabajo   [  62% ] 12/12 VUs  3m47.9s/6m10.0s
+
+mi_trabajo   [  62% ] 12/12 VUs  3m48.9s/6m10.0s
+
+mi_trabajo   [  62% ] 12/12 VUs  3m49.9s/6m10.0s
+
+mi_trabajo   [  62% ] 12/12 VUs  3m50.9s/6m10.0s
+
+mi_trabajo   [  63% ] 12/12 VUs  3m51.9s/6m10.0s
+
+mi_trabajo   [  63% ] 12/12 VUs  3m52.9s/6m10.0s
+
+mi_trabajo   [  63% ] 12/12 VUs  3m53.9s/6m10.0s
+
+mi_trabajo   [  63% ] 12/12 VUs  3m54.9s/6m10.0s
+
+mi_trabajo   [  64% ] 12/12 VUs  3m55.9s/6m10.0s
+
+mi_trabajo   [  64% ] 12/12 VUs  3m56.9s/6m10.0s
+
+mi_trabajo   [  64% ] 12/12 VUs  3m57.9s/6m10.0s
+
+mi_trabajo   [  65% ] 12/12 VUs  3m58.9s/6m10.0s
+
+mi_trabajo   [  65% ] 12/12 VUs  3m59.9s/6m10.0s
+
+mi_trabajo   [  65% ] 12/12 VUs  4m00.9s/6m10.0s
+
+mi_trabajo   [  65% ] 12/12 VUs  4m01.9s/6m10.0s
+
+mi_trabajo   [  66% ] 12/12 VUs  4m02.9s/6m10.0s
+
+mi_trabajo   [  66% ] 12/12 VUs  4m03.9s/6m10.0s
+
+mi_trabajo   [  66% ] 12/12 VUs  4m04.9s/6m10.0s
+
+mi_trabajo   [  66% ] 12/12 VUs  4m05.9s/6m10.0s
+
+mi_trabajo   [  67% ] 12/12 VUs  4m06.9s/6m10.0s
+
+mi_trabajo   [  67% ] 12/12 VUs  4m07.9s/6m10.0s
+
+mi_trabajo   [  67% ] 12/12 VUs  4m08.9s/6m10.0s
+
+mi_trabajo   [  68% ] 12/12 VUs  4m09.9s/6m10.0s
+
+mi_trabajo   [  68% ] 12/12 VUs  4m10.9s/6m10.0s
+
+mi_trabajo   [  68% ] 12/12 VUs  4m11.9s/6m10.0s
+
+mi_trabajo   [  68% ] 12/12 VUs  4m12.9s/6m10.0s
+
+mi_trabajo   [  69% ] 12/12 VUs  4m13.9s/6m10.0s
+
+mi_trabajo   [  69% ] 12/12 VUs  4m14.9s/6m10.0s
+
+mi_trabajo   [  69% ] 12/12 VUs  4m15.9s/6m10.0s
+
+mi_trabajo   [  69% ] 12/12 VUs  4m16.9s/6m10.0s
+
+mi_trabajo   [  70% ] 12/12 VUs  4m17.9s/6m10.0s
+
+mi_trabajo   [  70% ] 12/12 VUs  4m18.9s/6m10.0s
+
+mi_trabajo   [  70% ] 12/12 VUs  4m19.9s/6m10.0s
+
+mi_trabajo   [  71% ] 12/12 VUs  4m20.9s/6m10.0s
+
+mi_trabajo   [  71% ] 12/12 VUs  4m21.9s/6m10.0s
+
+mi_trabajo   [  71% ] 12/12 VUs  4m22.9s/6m10.0s
+
+mi_trabajo   [  71% ] 12/12 VUs  4m23.9s/6m10.0s
+
+mi_trabajo   [  72% ] 12/12 VUs  4m24.9s/6m10.0s
+
+mi_trabajo   [  72% ] 12/12 VUs  4m25.9s/6m10.0s
+
+mi_trabajo   [  72% ] 12/12 VUs  4m26.9s/6m10.0s
+
+mi_trabajo   [  72% ] 12/12 VUs  4m27.9s/6m10.0s
+
+mi_trabajo   [  73% ] 12/12 VUs  4m28.9s/6m10.0s
+
+mi_trabajo   [  73% ] 12/12 VUs  4m29.9s/6m10.0s
+
+mi_trabajo   [  73% ] 12/12 VUs  4m30.9s/6m10.0s
+
+mi_trabajo   [  73% ] 12/12 VUs  4m31.9s/6m10.0s
+
+mi_trabajo   [  74% ] 12/12 VUs  4m32.9s/6m10.0s
+
+mi_trabajo   [  74% ] 12/12 VUs  4m33.9s/6m10.0s
+
+mi_trabajo   [  74% ] 12/12 VUs  4m34.9s/6m10.0s
+
+mi_trabajo   [  75% ] 12/12 VUs  4m35.9s/6m10.0s
+
+mi_trabajo   [  75% ] 12/12 VUs  4m36.9s/6m10.0s
+
+mi_trabajo   [  75% ] 12/12 VUs  4m37.9s/6m10.0s
+
+mi_trabajo   [  75% ] 12/12 VUs  4m38.9s/6m10.0s
+
+mi_trabajo   [  76% ] 12/12 VUs  4m39.9s/6m10.0s
+
+mi_trabajo   [  76% ] 12/12 VUs  4m40.9s/6m10.0s
+
+mi_trabajo   [  76% ] 12/12 VUs  4m41.9s/6m10.0s
+
+mi_trabajo   [  76% ] 12/12 VUs  4m42.9s/6m10.0s
+
+mi_trabajo   [  77% ] 12/12 VUs  4m43.9s/6m10.0s
+
+mi_trabajo   [  77% ] 12/12 VUs  4m44.9s/6m10.0s
+
+mi_trabajo   [  77% ] 12/12 VUs  4m45.9s/6m10.0s
+
+mi_trabajo   [  78% ] 12/12 VUs  4m46.9s/6m10.0s
+
+mi_trabajo   [  78% ] 12/12 VUs  4m47.9s/6m10.0s
+
+mi_trabajo   [  78% ] 12/12 VUs  4m48.9s/6m10.0s
+
+mi_trabajo   [  78% ] 12/12 VUs  4m49.9s/6m10.0s
+
+mi_trabajo   [  79% ] 12/12 VUs  4m50.9s/6m10.0s
+
+mi_trabajo   [  79% ] 12/12 VUs  4m51.9s/6m10.0s
+
+mi_trabajo   [  79% ] 12/12 VUs  4m52.9s/6m10.0s
+
+mi_trabajo   [  79% ] 12/12 VUs  4m53.9s/6m10.0s
+
+mi_trabajo   [  80% ] 12/12 VUs  4m54.9s/6m10.0s
+
+mi_trabajo   [  80% ] 12/12 VUs  4m55.9s/6m10.0s
+
+mi_trabajo   [  80% ] 12/12 VUs  4m56.9s/6m10.0s
+
+mi_trabajo   [  81% ] 12/12 VUs  4m57.9s/6m10.0s
+
+mi_trabajo   [  81% ] 12/12 VUs  4m58.9s/6m10.0s
+
+mi_trabajo   [  81% ] 12/12 VUs  4m59.9s/6m10.0s
+
+mi_trabajo   [  81% ] 12/12 VUs  5m00.9s/6m10.0s
+
+mi_trabajo   [  82% ] 12/12 VUs  5m01.9s/6m10.0s
+
+mi_trabajo   [  82% ] 12/12 VUs  5m02.9s/6m10.0s
+
+mi_trabajo   [  82% ] 12/12 VUs  5m03.9s/6m10.0s
+
+mi_trabajo   [  82% ] 12/12 VUs  5m04.9s/6m10.0s
+
+mi_trabajo   [  83% ] 12/12 VUs  5m05.9s/6m10.0s
+
+mi_trabajo   [  83% ] 12/12 VUs  5m06.9s/6m10.0s
+
+mi_trabajo   [  83% ] 12/12 VUs  5m07.9s/6m10.0s
+
+mi_trabajo   [  83% ] 12/12 VUs  5m08.9s/6m10.0s
+
+mi_trabajo   [  84% ] 12/12 VUs  5m09.9s/6m10.0s
+
+mi_trabajo   [  84% ] 12/12 VUs  5m10.9s/6m10.0s
+
+mi_trabajo   [  84% ] 12/12 VUs  5m11.9s/6m10.0s
+
+mi_trabajo   [  85% ] 12/12 VUs  5m12.9s/6m10.0s
+
+mi_trabajo   [  85% ] 12/12 VUs  5m13.9s/6m10.0s
+
+mi_trabajo   [  85% ] 12/12 VUs  5m14.9s/6m10.0s
+
+mi_trabajo   [  85% ] 12/12 VUs  5m15.9s/6m10.0s
+
+mi_trabajo   [  86% ] 12/12 VUs  5m16.9s/6m10.0s
+
+mi_trabajo   [  86% ] 12/12 VUs  5m17.9s/6m10.0s
+
+mi_trabajo   [  86% ] 12/12 VUs  5m18.9s/6m10.0s
+
+mi_trabajo   [  86% ] 12/12 VUs  5m19.9s/6m10.0s
+
+mi_trabajo   [  87% ] 12/12 VUs  5m20.9s/6m10.0s
+
+mi_trabajo   [  87% ] 12/12 VUs  5m21.9s/6m10.0s
+
+mi_trabajo   [  87% ] 12/12 VUs  5m22.9s/6m10.0s
+
+mi_trabajo   [  88% ] 12/12 VUs  5m23.9s/6m10.0s
+
+mi_trabajo   [  88% ] 12/12 VUs  5m24.9s/6m10.0s
+
+mi_trabajo   [  88% ] 12/12 VUs  5m25.9s/6m10.0s
+
+mi_trabajo   [  88% ] 12/12 VUs  5m26.9s/6m10.0s
+
+mi_trabajo   [  89% ] 12/12 VUs  5m27.9s/6m10.0s
+
+mi_trabajo   [  89% ] 12/12 VUs  5m28.9s/6m10.0s
+
+mi_trabajo   [  89% ] 12/12 VUs  5m29.9s/6m10.0s
+
+mi_trabajo   [  89% ] 12/12 VUs  5m30.9s/6m10.0s
+
+mi_trabajo   [  90% ] 12/12 VUs  5m31.9s/6m10.0s
+
+mi_trabajo   [  90% ] 12/12 VUs  5m32.9s/6m10.0s
+
+mi_trabajo   [  90% ] 12/12 VUs  5m33.9s/6m10.0s
+
+mi_trabajo   [  91% ] 12/12 VUs  5m34.9s/6m10.0s
+
+mi_trabajo   [  91% ] 12/12 VUs  5m35.9s/6m10.0s
+
+mi_trabajo   [  91% ] 12/12 VUs  5m36.9s/6m10.0s
+
+mi_trabajo   [  91% ] 12/12 VUs  5m37.9s/6m10.0s
+
+mi_trabajo   [  92% ] 12/12 VUs  5m38.9s/6m10.0s
+
+mi_trabajo   [  92% ] 12/12 VUs  5m39.9s/6m10.0s
+
+mi_trabajo   [  92% ] 12/12 VUs  5m40.9s/6m10.0s
+
+mi_trabajo   [  92% ] 12/12 VUs  5m41.9s/6m10.0s
+
+mi_trabajo   [  93% ] 12/12 VUs  5m42.9s/6m10.0s
+
+mi_trabajo   [  93% ] 12/12 VUs  5m43.9s/6m10.0s
+
+mi_trabajo   [  93% ] 12/12 VUs  5m44.9s/6m10.0s
+
+mi_trabajo   [  93% ] 12/12 VUs  5m45.9s/6m10.0s
+
+mi_trabajo   [  94% ] 12/12 VUs  5m46.9s/6m10.0s
+
+mi_trabajo   [  94% ] 12/12 VUs  5m47.9s/6m10.0s
+
+mi_trabajo   [  94% ] 12/12 VUs  5m48.9s/6m10.0s
+
+mi_trabajo   [  95% ] 12/12 VUs  5m49.9s/6m10.0s
+
+mi_trabajo   [  95% ] 12/12 VUs  5m50.9s/6m10.0s
+
+mi_trabajo   [  95% ] 12/12 VUs  5m51.9s/6m10.0s
+
+mi_trabajo   [  95% ] 12/12 VUs  5m52.9s/6m10.0s
+
+mi_trabajo   [  96% ] 12/12 VUs  5m53.9s/6m10.0s
+
+mi_trabajo   [  96% ] 12/12 VUs  5m54.9s/6m10.0s
+
+mi_trabajo   [  96% ] 12/12 VUs  5m55.9s/6m10.0s
+
+mi_trabajo   [  96% ] 12/12 VUs  5m56.9s/6m10.0s
+
+mi_trabajo   [  97% ] 12/12 VUs  5m57.9s/6m10.0s
+
+mi_trabajo   [  97% ] 12/12 VUs  5m58.9s/6m10.0s
+
+mi_trabajo   [  97% ] 12/12 VUs  5m59.9s/6m10.0s
+
+mi_trabajo   [  98% ] 12/12 VUs  6m00.9s/6m10.0s
+
+mi_trabajo   [  98% ] 11/12 VUs  6m01.9s/6m10.0s
+
+mi_trabajo   [  98% ] 10/12 VUs  6m02.9s/6m10.0s
+
+mi_trabajo   [  98% ] 09/12 VUs  6m03.9s/6m10.0s
+
+mi_trabajo   [  99% ] 08/12 VUs  6m04.9s/6m10.0s
+
+mi_trabajo   [  99% ] 07/12 VUs  6m05.9s/6m10.0s
+
+mi_trabajo   [  99% ] 06/12 VUs  6m06.9s/6m10.0s
+
+mi_trabajo   [  99% ] 05/12 VUs  6m07.9s/6m10.0s
+
+mi_trabajo   [ 100% ] 04/12 VUs  6m08.9s/6m10.0s
+
+mi_trabajo   [ 100% ] 03/12 VUs  6m09.9s/6m10.0s
+
+mi_trabajo ↓ [ 100% ] 03/12 VUs  6m10s
+
+mi_trabajo ↓ [ 100% ] 03/12 VUs  6m10s
+
+
+  █ THRESHOLDS 
+
+    http_req_duration{endpoint:mi-trabajo}
+    ✓ 'p(95)<500' p(95)=12.05ms
+    ✓ 'p(99)<1000' p(99)=14.73ms
+
+    http_req_failed{endpoint:mi-trabajo}
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......................: 2664    7.156602/s
+    checks_succeeded...................: 100.00% 2664 out of 2664
+    checks_failed......................: 0.00%   0 out of 2664
+
+    ✓ status 200
+    ✓ trae etapas
+
+    HTTP
+    http_req_duration.......................................................: avg=8.34ms min=5.16ms med=7.78ms p(90)=10.85ms p(95)=12.07ms p(99)=14.77ms max=93.42ms
+      { endpoint:mi-trabajo }...............................................: avg=8.28ms min=5.16ms med=7.78ms p(90)=10.85ms p(95)=12.05ms p(99)=14.73ms max=17.75ms
+      { expected_response:true }............................................: avg=8.34ms min=5.16ms med=7.78ms p(90)=10.85ms p(95)=12.07ms p(99)=14.77ms max=93.42ms
+    http_req_failed.........................................................: 0.00%  0 out of 1333
+      { endpoint:mi-trabajo }...............................................: 0.00%  0 out of 1332
+    http_reqs...............................................................: 1333   3.580988/s
+
+    EXECUTION
+    iteration_duration......................................................: avg=3s     min=3s     med=3s     p(90)=3.01s   p(95)=3.01s   p(99)=3.01s   max=3.01s  
+    iterations..............................................................: 1332   3.578301/s
+    vus.....................................................................: 1      min=0         max=12
+    vus_max.................................................................: 12     min=12        max=12
+
+    NETWORK
+    data_received...........................................................: 6.3 MB 17 kB/s
+    data_sent...............................................................: 521 kB 1.4 kB/s
+
+
+
+
+mi_trabajo ✓ [ 100% ] 00/12 VUs  6m10s
+exit=0

@@ -1,0 +1,56 @@
+SGP-Kotoduo - verification run
+Date:        2026-11-25 15:15:53 local (2026-11-25T18:15:53.117Z UTC)
+Branch:      feat/f1-database
+Commit:      57d4ec1
+Dirty tree:  no
+Node:        v24.22.2
+OS:          Linux 7.0.0-43-generic (x64)
+
+===== lint: npm run lint =====
+
+> lint
+> npm run lint --workspaces --if-present
+
+
+> lint
+> eslint .
+
+----- lint: exit 0 (1.3s) -----
+
+===== typecheck: npm run typecheck =====
+
+> typecheck
+> npm run typecheck --workspaces --if-present
+
+
+> typecheck
+> tsc --noEmit
+
+----- typecheck: exit 0 (1.9s) -----
+
+===== test: npm test =====
+
+> test
+> npm run test --workspaces --if-present
+
+
+> test
+> vitest run
+
+
+ RUN  v5.1.1 <repo>/api
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  15:15:57
+   Duration  444ms (import 64%, tests 23%, transform 10%, worker 3%)
+
+----- test: exit 0 (1.3s) -----
+
+===== Summary =====
+PASS  lint       exit 0  1.3s
+PASS  typecheck  exit 0  1.9s
+PASS  test       exit 0  1.3s
+Result: all steps passed
+Log: evidencias/ejecuciones/verify_2026-11-25_151553_57d4ec1.log

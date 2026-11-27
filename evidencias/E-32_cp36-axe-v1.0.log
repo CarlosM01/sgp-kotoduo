@@ -1,0 +1,21 @@
+# E-32 · CP-36 (accesibilidad automatizada) · re-ejecución E3 · v1.0 (a8b5cea) · 2026-11-26 · servidor de desarrollo local (Vite :5173 + API :3000 con DB_ROL=sgp_app) · @axe-core/playwright 4.10.2, etiquetas wcag2a/wcag2aa/wcag21a/wcag21aa/wcag22aa
+# Comando: cd web && DB_ROL=sgp_app CP36_ADMIN=t.cp36adm npx playwright test e2e/accesibilidad.spec.ts
+# t.cp36adm: Administrador temporal con el hash de la clave de demo (el admin del seed debe cambiarla, D12); se borró al terminar con sus eventos.
+P-01_ingresar        1280x800  reglas OK=20 violaciones=0
+P-01_ingresar        360x800   reglas OK=20 violaciones=0
+P-06_panel           1280x800  reglas OK=26 violaciones=0
+P-06_panel           360x800   reglas OK=26 violaciones=0
+P-04a_ordenes        1280x800  reglas OK=26 violaciones=0
+P-04a_ordenes        360x800   reglas OK=26 violaciones=0
+P-04_ordenes-nueva   1280x800  reglas OK=22 violaciones=0
+P-04_ordenes-nueva   360x800   reglas OK=22 violaciones=0
+P-03_detalle-orden   1280x800  reglas OK=27 violaciones=0
+P-03_detalle-orden   360x800   reglas OK=27 violaciones=0
+P-08_insumos         1280x800  reglas OK=25 violaciones=0
+P-08_insumos         360x800   reglas OK=25 violaciones=0
+P-02_mi-trabajo      1280x800  reglas OK=21 violaciones=0
+P-02_mi-trabajo      360x800   reglas OK=21 violaciones=0
+P-10_bitacora        1280x800  reglas OK=26 violaciones=0
+P-10_bitacora        360x800   reglas OK=26 violaciones=0
+analizadas=16 graves=0 []
+  ✓  1 e2e/accesibilidad.spec.ts:56:1 › CP-36: the 8 MVP screens have no serious or critical WCAG A/AA violations (30.9s)

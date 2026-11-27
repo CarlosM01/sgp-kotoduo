@@ -1,0 +1,127 @@
+// Integration fixtures: each test creates its own users (prefix "t.") so the
+// seed users of the demo are never modified, and everything is removed after.
+import { randomUUID } from 'node:crypto';
+import type { Express } from 'express';
+import request from 'supertest';
+import { createApp, type AppOptions } from '../../src/app.js';
+import { leerConfig } from '../../src/config.js';
+import { crearContenedor, type Contenedor } from '../../src/contenedor.js';
+import type { CodigoRol } from '../../src/dominio/permisos.js';
+import { crearHasherArgon2 } from '../../src/infraestructura/seguridad/argon2.js';
+
+export const CLAVE_PRUEBA = 'tinta plotter azul 2026';
+export const CLAVE_DEMO_SEED = 'kotoduo demo local 2026';
+
+export interface UsuarioPrueba {
+  id: string;
+  nombreUsuario: string;
+  clave: string;
+}
+
+export interface Entorno {
+  contenedor: Contenedor;
+  app(limites?: AppOptions['limites']): Express;
+  crearUsuario(rol: CodigoRol, opciones?: { debeCambiarClave?: boolean }): Promise<UsuarioPrueba>;
+  /** Creates a user with the role and returns it with a valid access token. */
+  sesion(rol: CodigoRol): Promise<UsuarioPrueba & { token: string }>;
+  eventosDe(usuarioId: string): Promise<Array<{ tipo: string; payload: Record<string, unknown>; actor: { ip?: string } }>>;
+  usuario(id: string): Promise<{ intentos_fallidos: number; bloqueado_hasta: Date | null; debe_cambiar_clave: boolean; password_hash: string }>;
+  /** Creates a supply (code prefix "T-") so tests never change the stock of the seed supplies. */
+  crearInsumo(stock: number, minimo: number): Promise<{ id: number; codigo: string; nombre: string }>;
+  limpiar(): Promise<void>;
+}
+
+export async function prepararEntorno(): Promise<Entorno> {
+  const contenedor = await crearContenedor(leerConfig(process.env, { warn: () => {} }));
+  const { pool, mongo } = contenedor;
+  const eventos = mongo.db().collection('bitacora_eventos');
+  const hasher = crearHasherArgon2();
+  const creados: string[] = [];
+  const insumos: number[] = [];
+  const inicio = new Date();
+  const silencioso = { error: () => {}, warn: () => {} };
+
+  const entorno: Entorno = {
+    contenedor,
+
+    app(limites = { authPorMinuto: 10_000, apiPorMinuto: 10_000 }) {
+      return createApp({ corsOrigin: 'http://localhost:5173', servicios: contenedor.servicios, limites, log: silencioso });
+    },
+
+    async crearUsuario(rol, { debeCambiarClave = false } = {}) {
+      const id = randomUUID();
+      const nombreUsuario = `t.${id.slice(0, 8)}`;
+      await pool.query(
+        `INSERT INTO sgp.usuario (id, nombre_usuario, nombre_completo, password_hash, debe_cambiar_clave)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [id, nombreUsuario, `Prueba ${rol}`, await hasher.hash(CLAVE_PRUEBA), debeCambiarClave],
+      );
+      await pool.query(
+        `INSERT INTO sgp.usuario_rol (usuario_id, rol_id) SELECT $1, id FROM sgp.rol WHERE codigo = $2`,
+        [id, rol],
+      );
+      creados.push(id);
+      return { id, nombreUsuario, clave: CLAVE_PRUEBA };
+    },
+
+    async sesion(rol) {
+      const u = await entorno.crearUsuario(rol);
+      const res = await request(entorno.app())
+        .post('/api/v1/auth/login')
+        .send({ nombreUsuario: u.nombreUsuario, clave: u.clave });
+      if (res.status !== 200) throw new Error(`login failed for the test user: ${res.status}`);
+      return { ...u, token: res.body.accessToken as string };
+    },
+
+    async eventosDe(usuarioId) {
+      const docs = await eventos.find({ 'actor.usuario_id': usuarioId, ts: { $gte: inicio } }).sort({ _id: 1 }).toArray();
+      return docs.map((d) => ({ tipo: d.tipo as string, payload: d.payload as Record<string, unknown>, actor: d.actor as { ip?: string } }));
+    },
+
+    async usuario(id) {
+      const { rows } = await pool.query(
+        `SELECT intentos_fallidos, bloqueado_hasta, debe_cambiar_clave, password_hash FROM sgp.usuario WHERE id = $1`,
+        [id],
+      );
+      return rows[0];
+    },
+
+    async crearInsumo(stock, minimo) {
+      const codigo = `T-${randomUUID().slice(0, 8)}`;
+      const nombre = `Insumo de prueba ${codigo}`;
+      const { rows: [r] } = await pool.query<{ id: number }>(
+        `INSERT INTO sgp.insumo (codigo, nombre, unidad_medida, stock_actual, stock_minimo)
+         VALUES ($1, $2, 'PLIEGO', $3, $4) RETURNING id`,
+        [codigo, nombre, stock, minimo],
+      );
+      insumos.push(r!.id);
+      return { id: r!.id, codigo, nombre };
+    },
+
+    async limpiar() {
+      try {
+        await eventos.deleteMany({
+          ts: { $gte: inicio },
+          $or: [
+            { 'actor.usuario_id': { $in: creados } },
+            { 'payload.nombre_usuario': { $regex: '^t\\.' } },
+          ],
+        });
+        // Orders created by test users go first (creado_por is ON DELETE RESTRICT);
+        // their stages and requirements are removed by ON DELETE CASCADE.
+        // Kardex and alerts of the test supplies go before the orders: deleting a
+        // stage sets movimiento_insumo.etapa_orden_id to NULL, which the CHECK
+        // ck_mov_consumo_etapa refuses for a CONSUMO. movimiento_insumo is
+        // insert-only for sgp_app; the tests connect as the owner.
+        await pool.query(`DELETE FROM sgp.alerta_insumo WHERE insumo_id = ANY($1::int[])`, [insumos]);
+        await pool.query(`DELETE FROM sgp.movimiento_insumo WHERE insumo_id = ANY($1::int[])`, [insumos]);
+        await pool.query(`DELETE FROM sgp.orden_trabajo WHERE creado_por = ANY($1::uuid[])`, [creados]);
+        await pool.query(`DELETE FROM sgp.insumo WHERE id = ANY($1::int[])`, [insumos]);
+        await pool.query(`DELETE FROM sgp.usuario WHERE id = ANY($1::uuid[])`, [creados]);
+      } finally {
+        await contenedor.cerrar();
+      }
+    },
+  };
+  return entorno;
+}

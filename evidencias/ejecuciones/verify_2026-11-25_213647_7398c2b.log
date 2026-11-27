@@ -1,0 +1,102 @@
+SGP-Kotoduo - verification run
+Date:        2026-11-25 21:36:47 local (2026-11-26T00:36:47.891Z UTC)
+Branch:      feat/f5-frontend
+Commit:      7398c2b
+Dirty tree:  no
+Node:        v24.22.2
+OS:          Linux 7.0.0-43-generic (x64)
+
+===== lint: npm run lint =====
+
+> lint
+> npm run lint --workspaces --if-present
+
+
+> lint
+> eslint .
+
+
+> lint
+> eslint .
+
+----- lint: exit 0 (5.9s) -----
+
+===== typecheck: npm run typecheck =====
+
+> typecheck
+> npm run typecheck --workspaces --if-present
+
+
+> typecheck
+> tsc --noEmit
+
+
+> typecheck
+> tsc --noEmit
+
+----- typecheck: exit 0 (8.0s) -----
+
+===== test: npm test =====
+
+> test
+> npm run test --workspaces --if-present
+
+
+> test
+> vitest run
+
+
+ RUN  v5.1.2 <repo>/api
+
+
+ Test Files  12 passed (12)
+      Tests  199 passed (199)
+   Start at  21:37:02
+   Duration  994ms (import 70%, transform 13%, tests 12%, worker 5%)
+
+
+> test
+> vitest run
+
+
+ RUN  v5.1.2 <repo>/web
+
+Not implemented: Window's scrollTo() method
+
+ Test Files  8 passed (8)
+      Tests  48 passed (48)
+   Start at  21:37:04
+   Duration  3.94s (environment 55%, tests 22%, import 11%, setup 10%, transform 2%)
+
+----- test: exit 0 (6.3s) -----
+
+===== test:integracion: npm run test:integracion =====
+
+> test:integracion
+> npm run test:integracion --workspaces --if-present
+
+
+> test:integracion
+> vitest run -c vitest.integracion.config.ts
+
+
+ RUN  v5.1.2 <repo>/api
+
+
+ Test Files  8 passed (8)
+      Tests  98 passed (98)
+   Start at  21:37:08
+   Duration  20.34s (tests 80%, import 18%, transform 1%)
+
+    Isolate  8 workers spawned · ~156ms startup each (spawn + environment, per file)
+             at least ~1.09s faster with isolate: false — reuses workers across files instead of one per file
+
+----- test:integracion: exit 0 (21.2s) -----
+
+===== Summary =====
+PASS  lint             exit 0  5.9s
+PASS  typecheck        exit 0  8.0s
+PASS  test             exit 0  6.3s
+PASS  test:integracion exit 0  21.2s
+Result: all steps passed
+Log: evidencias/ejecuciones/verify_2026-11-25_213647_7398c2b.log

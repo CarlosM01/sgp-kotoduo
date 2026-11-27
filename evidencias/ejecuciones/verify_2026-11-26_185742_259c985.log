@@ -1,0 +1,102 @@
+SGP-Kotoduo - verification run
+Date:        2026-11-26 18:57:42 local (2026-11-26T21:57:42.005Z UTC)
+Branch:      feat/f7-pruebas
+Commit:      259c985
+Dirty tree:  yes (uncommitted changes)
+Node:        v24.22.2
+OS:          Linux 7.0.0-44-generic (x64)
+
+===== lint: npm run lint =====
+
+> lint
+> npm run lint --workspaces --if-present
+
+
+> lint
+> eslint .
+
+
+> lint
+> eslint .
+
+----- lint: exit 0 (8.0s) -----
+
+===== typecheck: npm run typecheck =====
+
+> typecheck
+> npm run typecheck --workspaces --if-present
+
+
+> typecheck
+> tsc --noEmit
+
+
+> typecheck
+> tsc --noEmit
+
+----- typecheck: exit 0 (11.1s) -----
+
+===== test: npm test =====
+
+> test
+> npm run test --workspaces --if-present
+
+
+> test
+> vitest run
+
+
+ RUN  v5.1.2 <repo>/api
+
+
+ Test Files  13 passed (13)
+      Tests  206 passed (206)
+   Start at  18:58:02
+   Duration  1.34s (import 72%, tests 12%, transform 12%, worker 4%)
+
+
+> test
+> vitest run
+
+
+ RUN  v5.1.2 <repo>/web
+
+Not implemented: Window's scrollTo() method
+
+ Test Files  9 passed (9)
+      Tests  49 passed (49)
+   Start at  18:58:04
+   Duration  5.87s (environment 49%, tests 26%, import 12%, setup 10%, transform 2%)
+
+----- test: exit 0 (9.2s) -----
+
+===== test:integracion: npm run test:integracion =====
+
+> test:integracion
+> npm run test:integracion --workspaces --if-present
+
+
+> test:integracion
+> vitest run -c vitest.integracion.config.ts
+
+
+ RUN  v5.1.2 <repo>/api
+
+
+ Test Files  9 passed (9)
+      Tests  103 passed (103)
+   Start at  18:58:12
+   Duration  23.05s (tests 75%, import 23%, transform 1%, setup 1%)
+
+    Isolate  9 workers spawned · ~192ms startup each (spawn + environment, per file)
+             at least ~1.54s faster with isolate: false — reuses workers across files instead of one per file
+
+----- test:integracion: exit 0 (24.9s) -----
+
+===== Summary =====
+PASS  lint             exit 0  8.0s
+PASS  typecheck        exit 0  11.1s
+PASS  test             exit 0  9.2s
+PASS  test:integracion exit 0  24.9s
+Result: all steps passed
+Log: evidencias/ejecuciones/verify_2026-11-26_185742_259c985.log

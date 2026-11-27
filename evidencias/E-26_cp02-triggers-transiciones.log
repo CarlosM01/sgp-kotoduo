@@ -1,0 +1,70 @@
+# E-26 · CP-02 (transiciones inválidas en BD) · v0.9 (7993d66) · 2026-11-26 18:40:56 -03
+# Cada intento corre en BEGIN ... ROLLBACK sobre OT-2026-0001 (DEMO-01).
+select e.secuencia, e.estado from sgp.etapa_orden e where e.orden_id = (select id from sgp.orden_trabajo where codigo = 'OT-2026-0001') order by 1;
+ secuencia |   estado   
+-----------+------------
+         1 | TERMINADA
+         2 | TERMINADA
+         3 | DISPONIBLE
+         4 | PENDIENTE
+         5 | PENDIENTE
+         6 | PENDIENTE
+(6 rows)
+
+BEGIN;
+BEGIN
+UPDATE sgp.etapa_orden SET estado='TERMINADA', terminada_en=now() WHERE orden_id = (select id from sgp.orden_trabajo where codigo = 'OT-2026-0001') AND secuencia = 4;
+ROLLBACK;
+ROLLBACK
+ERROR:  23514: Transición de etapa no permitida: PENDIENTE -> TERMINADA
+CONTEXT:  PL/pgSQL function fn_validar_transicion_etapa() line 23 at RAISE
+LOCATION:  exec_stmt_raise, pl_exec.c:3913
+BEGIN;
+BEGIN
+UPDATE sgp.etapa_orden SET estado='EN_CURSO' WHERE orden_id = (select id from sgp.orden_trabajo where codigo = 'OT-2026-0001') AND secuencia = 1;
+ERROR:  23514: Transición de etapa no permitida: TERMINADA -> EN_CURSO
+CONTEXT:  PL/pgSQL function fn_validar_transicion_etapa() line 23 at RAISE
+LOCATION:  exec_stmt_raise, pl_exec.c:3913
+ROLLBACK;
+ROLLBACK
+BEGIN;
+BEGIN
+UPDATE sgp.etapa_orden SET estado='DISPONIBLE' WHERE orden_id = (select id from sgp.orden_trabajo where codigo = 'OT-2026-0001') AND secuencia = 2;
+ROLLBACK;
+ERROR:  23514: Transición de etapa no permitida: TERMINADA -> DISPONIBLE
+CONTEXT:  PL/pgSQL function fn_validar_transicion_etapa() line 23 at RAISE
+LOCATION:  exec_stmt_raise, pl_exec.c:3913
+ROLLBACK
+BEGIN;
+BEGIN
+UPDATE sgp.orden_trabajo SET estado='REGISTRADA' WHERE id = (select id from sgp.orden_trabajo where codigo = 'OT-2026-0001');
+ERROR:  23514: Transición de orden no permitida: EN_PRODUCCION -> REGISTRADA
+CONTEXT:  PL/pgSQL function fn_validar_transicion_orden() line 25 at RAISE
+LOCATION:  exec_stmt_raise, pl_exec.c:3913
+ROLLBACK;
+ROLLBACK
+BEGIN;
+BEGIN
+UPDATE sgp.orden_trabajo SET estado='ENTREGADA' WHERE id = (select id from sgp.orden_trabajo where codigo = 'OT-2026-0001');
+ERROR:  23514: Transición de orden no permitida: EN_PRODUCCION -> ENTREGADA
+CONTEXT:  PL/pgSQL function fn_validar_transicion_orden() line 25 at RAISE
+LOCATION:  exec_stmt_raise, pl_exec.c:3913
+ROLLBACK;
+ROLLBACK
+select e.secuencia, e.estado from sgp.etapa_orden e where e.orden_id = (select id from sgp.orden_trabajo where codigo = 'OT-2026-0001') order by 1;
+ secuencia |   estado   
+-----------+------------
+         1 | TERMINADA
+         2 | TERMINADA
+         3 | DISPONIBLE
+         4 | PENDIENTE
+         5 | PENDIENTE
+         6 | PENDIENTE
+(6 rows)
+
+select codigo, estado from sgp.orden_trabajo where id = (select id from sgp.orden_trabajo where codigo = 'OT-2026-0001');
+    codigo    |    estado     
+--------------+---------------
+ OT-2026-0001 | EN_PRODUCCION
+(1 row)
+

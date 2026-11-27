@@ -1,0 +1,401 @@
+# E-24 — CP-32 (parcial): cabeceras, dependencias, secretos y privilegios de la BD
+# Versión: v0.9 (df19bbc) · Fecha: 2026-11-26 18:40 -0300 · Stack Docker local por HTTP (http://localhost:8080), sin staging ni TLS
+# No ejecutado en E1: ZAP baseline (no instalado) y lista de cotejo ASVS (Anexo E).
+
+########## 1) Cabeceras de respuesta (curl -D, a través de nginx) ##########
+# HSTS: el stack local no tiene TLS. nginx no envía Strict-Transport-Security; la API (helmet) sí la envía, pero por HTTP el navegador la ignora (RFC 6797 §8.1). Se registra como no aplicable en local.
+---- GET / (cliente)
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:04 GMT
+Content-Type: text/html
+Content-Length: 463
+Last-Modified: Thu, 26 Nov 2026 20:26:37 GMT
+Connection: keep-alive
+ETag: "6b0895fd-1cf"
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: no-referrer
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Cross-Origin-Opener-Policy: same-origin
+Cache-Control: no-cache
+Accept-Ranges: bytes
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=no Referrer-Policy=si X-Powered-By=ausente
+---- GET /ingresar (ruta del cliente)
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:04 GMT
+Content-Type: text/html
+Content-Length: 463
+Last-Modified: Thu, 26 Nov 2026 20:26:37 GMT
+Connection: keep-alive
+ETag: "6b0895fd-1cf"
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: no-referrer
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Cross-Origin-Opener-Policy: same-origin
+Cache-Control: no-cache
+Accept-Ranges: bytes
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=no Referrer-Policy=si X-Powered-By=ausente
+---- GET /ordenes/12 (ruta del cliente, fallback a index.html)
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:04 GMT
+Content-Type: text/html
+Content-Length: 463
+Last-Modified: Thu, 26 Nov 2026 20:26:37 GMT
+Connection: keep-alive
+ETag: "6b0895fd-1cf"
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: no-referrer
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Cross-Origin-Opener-Policy: same-origin
+Cache-Control: no-cache
+Accept-Ranges: bytes
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=no Referrer-Policy=si X-Powered-By=ausente
+---- GET /insumos (ruta del cliente)
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:04 GMT
+Content-Type: text/html
+Content-Length: 463
+Last-Modified: Thu, 26 Nov 2026 20:26:37 GMT
+Connection: keep-alive
+ETag: "6b0895fd-1cf"
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: no-referrer
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Cross-Origin-Opener-Policy: same-origin
+Cache-Control: no-cache
+Accept-Ranges: bytes
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=no Referrer-Policy=si X-Powered-By=ausente
+---- GET /assets/index-DKTmcJAl.js (asset)
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:04 GMT
+Content-Type: application/javascript
+Content-Length: 413064
+Last-Modified: Thu, 26 Nov 2026 20:26:37 GMT
+Connection: keep-alive
+ETag: "6b0895fd-64d88"
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: no-referrer
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Cross-Origin-Opener-Policy: same-origin
+Cache-Control: public, max-age=31536000, immutable
+Accept-Ranges: bytes
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=no Referrer-Policy=si X-Powered-By=ausente
+---- GET /assets/index-Bij4e49h.css (asset)
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:04 GMT
+Content-Type: text/css
+Content-Length: 16319
+Last-Modified: Thu, 26 Nov 2026 20:26:37 GMT
+Connection: keep-alive
+ETag: "6b0895fd-3fbf"
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: no-referrer
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Cross-Origin-Opener-Policy: same-origin
+Cache-Control: public, max-age=31536000, immutable
+Accept-Ranges: bytes
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=no Referrer-Policy=si X-Powered-By=ausente
+---- GET /assets/no-existe.js (asset inexistente, 404)
+HTTP/1.1 404 Not Found
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:04 GMT
+Content-Type: text/html
+Content-Length: 146
+Connection: keep-alive
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: no-referrer
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Cross-Origin-Opener-Policy: same-origin
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=no Referrer-Policy=si X-Powered-By=ausente
+---- GET /api/v1/health (API vía nginx)
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:04 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 15
+Connection: keep-alive
+X-Request-Id: 1f462ae4-61b7-4763-99ff-e46a7815b437
+Content-Security-Policy: default-src 'none';base-uri 'none';font-src 'self' https: data:;form-action 'self';frame-ancestors 'none';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+Access-Control-Allow-Origin: http://localhost:8080
+Vary: Origin
+Access-Control-Allow-Credentials: true
+RateLimit-Policy: 300;w=60
+RateLimit: limit=300, remaining=299, reset=60
+ETag: W/"f-VaSQ4oDUiZblZNAEkkN+sX+q3Sg"
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=si Referrer-Policy=si X-Powered-By=ausente
+---- GET /api/v1/panel sin token (API vía nginx, 401)
+HTTP/1.1 401 Unauthorized
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:05 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 69
+Connection: keep-alive
+X-Request-Id: 9688d089-9fb7-4452-bb7f-4d3024361977
+Content-Security-Policy: default-src 'none';base-uri 'none';font-src 'self' https: data:;form-action 'self';frame-ancestors 'none';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+Access-Control-Allow-Origin: http://localhost:8080
+Vary: Origin
+Access-Control-Allow-Credentials: true
+RateLimit-Policy: 300;w=60
+RateLimit: limit=300, remaining=298, reset=60
+ETag: W/"45-vqqMQC4Qcxl5ycgjNSjm1eQv7cQ"
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=si Referrer-Policy=si X-Powered-By=ausente
+---- GET /api/v1/panel con token de la Encargada (API vía nginx, 200)
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:05 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 512
+Connection: keep-alive
+X-Request-Id: bc240998-b007-4425-8a5f-7321ded07f44
+Content-Security-Policy: default-src 'none';base-uri 'none';font-src 'self' https: data:;form-action 'self';frame-ancestors 'none';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+Access-Control-Allow-Origin: http://localhost:8080
+Vary: Origin
+Access-Control-Allow-Credentials: true
+RateLimit-Policy: 300;w=60
+RateLimit: limit=300, remaining=297, reset=60
+ETag: W/"200-CkzXwOkjYOtIDrrUuQeybglP2dk"
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=si Referrer-Policy=si X-Powered-By=ausente
+---- POST /api/v1/auth/login con cuerpo inválido (API vía nginx, 400)
+HTTP/1.1 400 Bad Request
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:06 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 192
+Connection: keep-alive
+X-Request-Id: 507848aa-7de4-416e-bb54-3111a18fedd8
+Content-Security-Policy: default-src 'none';base-uri 'none';font-src 'self' https: data:;form-action 'self';frame-ancestors 'none';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+Access-Control-Allow-Origin: http://localhost:8080
+Vary: Origin
+Access-Control-Allow-Credentials: true
+RateLimit-Policy: 300;w=60
+RateLimit: limit=300, remaining=296, reset=59
+ETag: W/"c0-QJIY8l1dfU0xxHfCECOfDEssruY"
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=si Referrer-Policy=si X-Powered-By=ausente
+---- GET /api/v1/no-existe (API vía nginx, 404)
+HTTP/1.1 404 Not Found
+Server: nginx
+Date: Thu, 26 Nov 2026 21:39:06 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 64
+Connection: keep-alive
+X-Request-Id: 258f640d-cd53-4f95-81a2-9378cfe896c9
+Content-Security-Policy: default-src 'none';base-uri 'none';font-src 'self' https: data:;form-action 'self';frame-ancestors 'none';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+Access-Control-Allow-Origin: http://localhost:8080
+Vary: Origin
+Access-Control-Allow-Credentials: true
+RateLimit-Policy: 300;w=60
+RateLimit: limit=300, remaining=295, reset=59
+ETag: W/"40-5DDlkPw/AVs3YOcCfVO7rV+kFqw"
+
+chequeo: CSP=si nosniff=si XFO=si frame-ancestors=si HSTS=si Referrer-Policy=si X-Powered-By=ausente
+
+Resumen: 12/12 respuestas con CSP, X-Content-Type-Options: nosniff, X-Frame-Options y frame-ancestors 'none', Referrer-Policy: no-referrer; 0/12 con X-Powered-By; Server: nginx sin versión.
+HSTS: 0/7 respuestas del cliente (nginx), 5/5 de la API (por HTTP, sin efecto).
+
+########## 2) npm audit en la raíz (workspaces api y web) — npm 11.19.1, node v24.22.2 ##########
+---- npm audit --omit=dev
+found 0 vulnerabilities
+exit=0
+---- npm audit (completo)
+found 0 vulnerabilities
+exit=0
+---- npm audit --audit-level=high (umbral de ES2)
+found 0 vulnerabilities
+exit=0
+---- metadata (--json): completo y --omit=dev
+{"vulnerabilities": {"info": 0, "low": 0, "moderate": 0, "high": 0, "critical": 0, "total": 0}, "dependencies": {"prod": 112, "dev": 314, "optional": 74, "peer": 8, "peerOptional": 0, "total": 439}}
+{"vulnerabilities": {"info": 0, "low": 0, "moderate": 0, "high": 0, "critical": 0, "total": 0}, "dependencies": {"prod": 112, "dev": 314, "optional": 74, "peer": 8, "peerOptional": 0, "total": 439}}
+
+########## 3) Búsqueda de secretos en el árbol versionado (git grep sobre el tag v0.9) ##########
+== Archivos .env versionados (git ls-files | grep -E '(^|/)\.env') ==
+.env.example
+(fin)
+== .env ignorado por git (git check-ignore -v .env) ==
+.gitignore:4:.env	.env
+exit=0
+== Claves privadas (BEGIN ... PRIVATE KEY) ==
+coincidencias: 0
+== Tokens conocidos (AWS AKIA, GitHub ghp_/gho_/github_pat_, Slack xox, Google AIza, sk-, JWT eyJ...eyJ) ==
+v0.9:api/test/integracion/autorizacion.test.ts:29:    ['forged token', 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.c2lnbmF0dXJl'],
+coincidencias: 1
+== Asignaciones de password/secret/token con valor literal (revisión manual de cada coincidencia) ==
+v0.9:.env.example:5:POSTGRES_PASSWORD=change_me_local
+v0.9:.env.example:20:JWT_SECRET=replace_with_a_long_random_string
+v0.9:api/src/aplicacion/auth.ts:28:  tokens: ServicioTokens;
+v0.9:api/src/app.ts:22:  tokens: ServicioTokens;
+v0.9:api/src/config.ts:8:  JWT_SECRET: z.string().min(32, 'JWT_SECRET must have at least 32 characters'),
+v0.9:api/src/config.ts:18:const PLACEHOLDER_SECRET = 'replace_with_a_long_random_string';
+v0.9:api/src/contenedor.ts:38:  const tokens = crearServicioTokensJwt(config.JWT_SECRET);
+v0.9:api/src/infraestructura/http/registro-rutas.ts:36:function autenticar(tokens: ServicioTokens, permiteCambioClave: boolean): RequestHandler {
+v0.9:api/src/infraestructura/http/registro-rutas.ts:65:export function crearRegistroRutas(router: Router, deps: { tokens: ServicioTokens; auditoria: Auditoria }) {
+v0.9:api/src/infraestructura/pg/usuario-repositorio.ts:30:    passwordHash: f.password_hash,
+v0.9:api/test/aplicacion/auth.test.ts:24:      tokens: crearServicioTokensJwt(SECRETO_PRUEBA),
+v0.9:api/test/apoyo/fakes.ts:10:export const SECRETO_PRUEBA = 'test-secret-with-at-least-32-characters!!';
+v0.9:api/test/apoyo/fakes.ts:51:  const tokens = crearServicioTokensJwt(SECRETO_PRUEBA);
+v0.9:api/test/config.test.ts:8:  JWT_SECRET: 'a-random-secret-with-more-than-32-chars',
+v0.9:api/test/config.test.ts:18:    expect(() => leerConfig({ ...BASE, JWT_SECRET: PLACEHOLDER, NODE_ENV: 'production' }, { warn: () => {} })).toThrow(
+v0.9:api/test/config.test.ts:25:    leerConfig({ ...BASE, JWT_SECRET: PLACEHOLDER }, { warn });
+v0.9:api/test/http/tokens-jwt.test.ts:12:  const tokens = crearServicioTokensJwt(SECRETO_PRUEBA);
+v0.9:api/test/integracion/apoyo.ts:73:      return { ...u, token: res.body.accessToken as string };
+v0.9:api/test/integracion/autorizacion.test.ts:21:  return { id: u.id, token: res.body.accessToken as string };
+v0.9:api/test/integracion/etapas.test.ts:69:const asignar = (etapaId: string, responsableId: string, version: number, token = encargada.token) =>
+v0.9:api/test/integracion/ordenes.test.ts:39:const crear = (cuerpo: unknown, token = vendedor.token) =>
+v0.9:api/test/integracion/panel.test.ts:56:const panel = (query: Record<string, string>, token = encargada.token) =>
+v0.9:db/mongo/pruebas_integridad.js:37:    password: 'no-deberia-guardarse',
+v0.9:docker-compose.yml:15:      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_local}
+v0.9:docker-compose.yml:57:      DATABASE_URL: postgres://${POSTGRES_USER:-sgp}:${POSTGRES_PASSWORD:-change_me_local}@postgres:5432/${POSTGRES_DB:-sgp_kotoduo}
+v0.9:web/src/compartido/sesion.ts:55:    accessToken: s.accessToken,
+== URLs con credenciales embebidas (esquema://usuario:clave@) ==
+v0.9:.env.example:8:DATABASE_URL=postgres://sgp:change_me_local@localhost:5432/sgp_kotoduo
+v0.9:docker-compose.yml:57:      DATABASE_URL: postgres://${POSTGRES_USER:-sgp}:${POSTGRES_PASSWORD:-change_me_local}@postgres:5432/${POSTGRES_DB:-sgp_kotoduo}
+== Hashes argon2 en el seed (contraseña de demo documentada) ==
+v0.9:db/postgres/02_seed.sql:5
+v0.9:db/postgres/consultas_ejemplo.sql:3
+== Historial: ¿algún commit agregó .env? (git log --all --diff-filter=A -- .env) ==
+(fin)
+== Logs del contenedor sgp-api: líneas totales y búsqueda de secretos (JWT eyJ, contraseña de demo, 'password', 'clave', JWT_SECRET) ==
+líneas: 1
+patrón 'eyJ': 0 coincidencias
+patrón 'kotoduo demo local': 0 coincidencias
+patrón 'password': 0 coincidencias
+patrón '"clave"': 0 coincidencias
+patrón 'JWT_SECRET': 0 coincidencias
+patrón 'Authorization': 0 coincidencias
+Ejemplo de línea de log (primera petición registrada):
+Revisión manual: todas las coincidencias son marcadores de .env.example, secretos de prueba de los tests (SECRETO_PRUEBA, token falsificado de autorizacion.test.ts), nombres de variables o la contraseña de demo documentada en el README (hash argon2 en el seed). Ninguna credencial real.
+
+########## 4) Privilegios con el rol sgp_app (psql, transacciones con ROLLBACK) ##########
+== Privilegios del rol sgp_app (R7, R8). Cada intento en su propia transacción con ROLLBACK: no cambia datos ni esquema ==
+ conectado_como | es_superusuario 
+----------------+-----------------
+ sgp            | t
+(1 row)
+
+-- 1) UPDATE sobre movimiento_insumo como sgp_app
+BEGIN
+SET
+psql:/tmp/cp32-sgpapp.sql:4: ERROR:  permission denied for table movimiento_insumo
+ROLLBACK
+-- 2) DELETE sobre outbox_evento como sgp_app
+BEGIN
+SET
+psql:/tmp/cp32-sgpapp.sql:6: ERROR:  permission denied for table outbox_evento
+ROLLBACK
+-- 3) CREATE TABLE en el esquema sgp como sgp_app
+BEGIN
+SET
+psql:/tmp/cp32-sgpapp.sql:8: ERROR:  permission denied for schema sgp
+LINE 1: CREATE TABLE sgp.xss_cp32_intento (id int);
+                     ^
+ROLLBACK
+-- 3b) CREATE TABLE en public como sgp_app
+BEGIN
+SET
+psql:/tmp/cp32-sgpapp.sql:10: ERROR:  permission denied for schema public
+LINE 1: CREATE TABLE public.xss_cp32_intento (id int);
+                     ^
+ROLLBACK
+-- Control: SELECT permitido como sgp_app
+BEGIN
+SET
+ movimientos_visibles 
+----------------------
+                   14
+(1 row)
+
+ROLLBACK
+---- Rol con que se conecta la API del stack (DATABASE_URL del contenedor sgp-api, clave redactada)
+postgres://sgp:<redactada>@postgres:5432/sgp_kotoduo
+  rolname  | rolsuper | rolcanlogin 
+-----------+----------+-------------
+ sgp       | t        | t
+ sgp_app   | f        | f
+ sgp_relay | f        | f
+(3 rows)
+
+Observación: los tres intentos con sgp_app fallan por falta de privilegios, pero la API no usa sgp_app: se conecta como 'sgp', superusuario y dueño del esquema (ver DEF-02).

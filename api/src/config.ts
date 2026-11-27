@@ -1,0 +1,48 @@
+// Environment configuration, validated at startup: the API refuses to start
+// with a missing or weak setting instead of failing later at request time.
+import { z } from 'zod';
+
+const ConfigSchema = z.object({
+  DATABASE_URL: z.string().min(1),
+  MONGO_URL: z.string().min(1),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must have at least 32 characters'),
+  API_PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
+  CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
+  NODE_ENV: z.string().default('development'),
+  /** Proxy hops in front of the API whose X-Forwarded-For is trusted (1 behind the compose nginx). */
+  TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
+  /**
+   * PostgreSQL role every pooled session switches to (`-c role=...` at connect),
+   * e.g. sgp_app, the least-privilege role of the DDL (DEF-02). Unset: the
+   * login role of DATABASE_URL. A plain lowercase name only: it goes into the
+   * connection options.
+   */
+  DB_ROL: z.preprocess(
+    // `DB_ROL=` (the .env.example line) arrives as '': same as unset.
+    (v) => (v === '' ? undefined : v),
+    z.string().regex(/^[a-z_][a-z0-9_]{0,62}$/, 'DB_ROL must be a lowercase PostgreSQL role name').optional(),
+  ),
+});
+
+export type Config = z.infer<typeof ConfigSchema>;
+
+const PLACEHOLDER_SECRET = 'replace_with_a_long_random_string';
+
+export function leerConfig(
+  env: NodeJS.ProcessEnv = process.env,
+  log: Pick<Console, 'warn'> = console,
+): Config {
+  const r = ConfigSchema.safeParse(env);
+  if (!r.success) {
+    const campos = r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
+    throw new Error(`Invalid configuration: ${campos}`);
+  }
+  if (r.data.JWT_SECRET === PLACEHOLDER_SECRET) {
+    if (r.data.NODE_ENV === 'production') {
+      throw new Error('Invalid configuration: JWT_SECRET still has the .env.example placeholder');
+    }
+    // Public value: anyone could sign valid tokens. Accepted only for local development.
+    log.warn('WARNING: JWT_SECRET is the public .env.example placeholder; set a random value outside local development');
+  }
+  return r.data;
+}

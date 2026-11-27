@@ -1,0 +1,535 @@
+# E-22 — CP-23 (parcial): EXPLAIN ANALYZE del panel con volumen
+# Versión: v0.9 (df19bbc) · Fecha: 2026-11-26 18:36 -0300 · PostgreSQL local (contenedor sgp-postgres), sin staging
+# Comando: docker exec sgp-postgres psql -U sgp -d sgp_kotoduo -f /tmp/cp23.sql (script en el scratch del ejecutor, consultas copiadas de orden-repositorio.ts)
+
+== CP-23: EXPLAIN ANALYZE de la consulta de GET /api/v1/panel (v0.9) ==
+-- Origen: api/src/infraestructura/pg/orden-repositorio.ts, funciones panel() y resumenPanel().
+-- Se usa PREPARE con los mismos tipos de parámetro que envía node-postgres.
+             fecha             |                                         version                                          
+-------------------------------+------------------------------------------------------------------------------------------
+ 2026-11-26 21:35:14.586683+00 | PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+(1 row)
+
+-- Volumen presente:
+ ot_total | ot_vol | etapas_total 
+----------+--------+--------------
+     5005 |   5000 |        30030
+(1 row)
+
+    estado     | count 
+---------------+-------
+ EN_PRODUCCION |  3502
+ REGISTRADA    |   500
+ TERMINADA     |  1003
+(3 rows)
+
+-- Índices de orden_trabajo:
+        indexname         |                                             indexdef                                             
+--------------------------+--------------------------------------------------------------------------------------------------
+ ix_ot_estado_compromiso  | CREATE INDEX ix_ot_estado_compromiso ON sgp.orden_trabajo USING btree (estado, fecha_compromiso)
+ orden_trabajo_codigo_key | CREATE UNIQUE INDEX orden_trabajo_codigo_key ON sgp.orden_trabajo USING btree (codigo)
+ orden_trabajo_pkey       | CREATE UNIQUE INDEX orden_trabajo_pkey ON sgp.orden_trabajo USING btree (id)
+(3 rows)
+
+PREPARE
+PREPARE
+== Calentamiento (3 ejecuciones, sin salida) ==
+== A) Pantalla Panel por defecto: filtro=activas, pagina=1, tamano=20 (TAMANO de web/src/panel/Panel.tsx) ==
+                                                                                                                                                              QUERY PLAN                                                                                                                                                              
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=34622.40..34622.45 rows=20 width=513) (actual time=704.257..704.272 rows=20 loops=1)
+   Buffers: shared hit=99942
+   ->  Sort  (cost=34622.40..34683.20 rows=24320 width=513) (actual time=704.255..704.268 rows=20 loops=1)
+         Sort Key: ((((o.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (o.fecha_compromiso < CURRENT_DATE))) DESC, ((((o.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (COALESCE(o.fecha_estimada_termino, o.fecha_compromiso) > o.fecha_compromiso))) DESC, o.fecha_compromiso, o.codigo
+         Sort Method: top-N heapsort  Memory: 35kB
+         Buffers: shared hit=99942
+         ->  WindowAgg  (cost=3763.75..33975.26 rows=24320 width=513) (actual time=693.966..700.164 rows=4002 loops=1)
+               Buffers: shared hit=99942
+               ->  GroupAggregate  (cost=3763.75..33428.06 rows=24320 width=445) (actual time=34.420..689.634 rows=4002 loops=1)
+                     Group Key: o.id, tt.nombre, ea.nombre, ar.nombre, u.nombre_completo
+                     Buffers: shared hit=99942
+                     ->  Incremental Sort  (cost=3763.75..31968.86 rows=24320 width=437) (actual time=34.387..669.495 rows=24012 loops=1)
+                           Sort Key: o.id, tt.nombre, ea.nombre, ar.nombre, u.nombre_completo
+                           Presorted Key: o.id
+                           Full-sort Groups: 667  Sort Method: quicksort  Average Memory: 31kB  Peak Memory: 31kB
+                           Buffers: shared hit=99942
+                           ->  Nested Loop Left Join  (cost=3756.80..31268.25 rows=24320 width=437) (actual time=33.210..637.317 rows=24012 loops=1)
+                                 Buffers: shared hit=99942
+                                 ->  Nested Loop Left Join  (cost=3756.65..30647.26 rows=24320 width=301) (actual time=33.176..620.171 rows=24012 loops=1)
+                                       Buffers: shared hit=99932
+                                       ->  Merge Left Join  (cost=3729.83..4142.05 rows=24320 width=269) (actual time=33.064..47.656 rows=24012 loops=1)
+                                             Merge Cond: (o.id = e.orden_id)
+                                             Buffers: shared hit=824
+                                             ->  Sort  (cost=449.91..459.91 rows=4002 width=243) (actual time=7.249..8.228 rows=4002 loops=1)
+                                                   Sort Key: o.id
+                                                   Sort Method: quicksort  Memory: 597kB
+                                                   Buffers: shared hit=113
+                                                   ->  Hash Join  (cost=12.47..210.46 rows=4002 width=243) (actual time=0.075..3.727 rows=4002 loops=1)
+                                                         Hash Cond: (o.tipo_trabajo_id = tt.id)
+                                                         Buffers: shared hit=113
+                                                         ->  Seq Scan on orden_trabajo o  (cost=0.00..187.07 rows=4002 width=67) (actual time=0.014..2.224 rows=4002 loops=1)
+                                                               Filter: ((estado)::text = ANY ('{REGISTRADA,EN_DISENO,EN_PRODUCCION,DETENIDA}'::text[]))
+                                                               Rows Removed by Filter: 1003
+                                                               Buffers: shared hit=112
+                                                         ->  Hash  (cost=11.10..11.10 rows=110 width=180) (actual time=0.035..0.036 rows=3 loops=1)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               Buffers: shared hit=1
+                                                               ->  Seq Scan on tipo_trabajo tt  (cost=0.00..11.10 rows=110 width=180) (actual time=0.017..0.019 rows=3 loops=1)
+                                                                     Buffers: shared hit=1
+                                             ->  Sort  (cost=3279.93..3355.96 rows=30415 width=42) (actual time=25.802..30.016 rows=30030 loops=1)
+                                                   Sort Key: e.orden_id
+                                                   Sort Method: quicksort  Memory: 2880kB
+                                                   Buffers: shared hit=711
+                                                   ->  Seq Scan on etapa_orden e  (cost=0.00..1015.15 rows=30415 width=42) (actual time=0.014..6.278 rows=30030 loops=1)
+                                                         Buffers: shared hit=711
+                                       ->  Hash Right Join  (cost=26.81..27.89 rows=1 width=32) (actual time=0.016..0.018 rows=1 loops=24012)
+                                             Hash Cond: (u.id = ea.responsable_id)
+                                             Buffers: shared hit=99108
+                                             ->  Seq Scan on usuario u  (cost=0.00..1.05 rows=5 width=31) (actual time=0.001..0.001 rows=5 loops=24012)
+                                                   Buffers: shared hit=24012
+                                             ->  Hash  (cost=26.80..26.80 rows=1 width=33) (actual time=0.013..0.013 rows=1 loops=24012)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                   Buffers: shared hit=75096
+                                                   ->  Subquery Scan on ea  (cost=26.79..26.80 rows=1 width=33) (actual time=0.007..0.007 rows=1 loops=24012)
+                                                         Buffers: shared hit=75096
+                                                         ->  Limit  (cost=26.79..26.79 rows=1 width=35) (actual time=0.007..0.007 rows=1 loops=24012)
+                                                               Buffers: shared hit=75096
+                                                               ->  Sort  (cost=26.79..26.79 rows=1 width=35) (actual time=0.006..0.006 rows=1 loops=24012)
+                                                                     Sort Key: x.secuencia
+                                                                     Sort Method: quicksort  Memory: 25kB
+                                                                     Buffers: shared hit=75096
+                                                                     ->  Bitmap Heap Scan on etapa_orden x  (cost=4.33..26.78 rows=1 width=35) (actual time=0.004..0.005 rows=1 loops=24012)
+                                                                           Recheck Cond: (orden_id = o.id)
+                                                                           Filter: ((estado)::text = ANY ('{DISPONIBLE,EN_CURSO,BLOQUEADA}'::text[]))
+                                                                           Rows Removed by Filter: 5
+                                                                           Heap Blocks: exact=27072
+                                                                           Buffers: shared hit=75096
+                                                                           ->  Bitmap Index Scan on uq_etapa_secuencia  (cost=0.00..4.33 rows=6 width=0) (actual time=0.002..0.002 rows=6 loops=24012)
+                                                                                 Index Cond: (orden_id = o.id)
+                                                                                 Buffers: shared hit=48024
+                                 ->  Memoize  (cost=0.15..8.17 rows=1 width=140) (actual time=0.000..0.000 rows=1 loops=24012)
+                                       Cache Key: ea.area_id
+                                       Cache Mode: logical
+                                       Hits: 24007  Misses: 5  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                       Buffers: shared hit=10
+                                       ->  Index Scan using area_pkey on area ar  (cost=0.14..8.16 rows=1 width=140) (actual time=0.006..0.006 rows=1 loops=5)
+                                             Index Cond: (id = ea.area_id)
+                                             Buffers: shared hit=10
+ Planning:
+   Buffers: shared hit=12
+ Planning Time: 1.781 ms
+ Execution Time: 706.113 ms
+(82 rows)
+
+== B) Variante ES2: paginada a 50 (filtro=activas, pagina=1, tamano=50) ==
+                                                                                                                                                              QUERY PLAN                                                                                                                                                              
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=34783.15..34783.27 rows=50 width=513) (actual time=727.557..727.576 rows=50 loops=1)
+   Buffers: shared hit=99942
+   ->  Sort  (cost=34783.15..34843.95 rows=24320 width=513) (actual time=727.555..727.569 rows=50 loops=1)
+         Sort Key: ((((o.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (o.fecha_compromiso < CURRENT_DATE))) DESC, ((((o.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (COALESCE(o.fecha_estimada_termino, o.fecha_compromiso) > o.fecha_compromiso))) DESC, o.fecha_compromiso, o.codigo
+         Sort Method: top-N heapsort  Memory: 47kB
+         Buffers: shared hit=99942
+         ->  WindowAgg  (cost=3763.75..33975.26 rows=24320 width=513) (actual time=714.412..721.822 rows=4002 loops=1)
+               Buffers: shared hit=99942
+               ->  GroupAggregate  (cost=3763.75..33428.06 rows=24320 width=445) (actual time=29.947..709.966 rows=4002 loops=1)
+                     Group Key: o.id, tt.nombre, ea.nombre, ar.nombre, u.nombre_completo
+                     Buffers: shared hit=99942
+                     ->  Incremental Sort  (cost=3763.75..31968.86 rows=24320 width=437) (actual time=29.919..689.495 rows=24012 loops=1)
+                           Sort Key: o.id, tt.nombre, ea.nombre, ar.nombre, u.nombre_completo
+                           Presorted Key: o.id
+                           Full-sort Groups: 667  Sort Method: quicksort  Average Memory: 31kB  Peak Memory: 31kB
+                           Buffers: shared hit=99942
+                           ->  Nested Loop Left Join  (cost=3756.80..31268.25 rows=24320 width=437) (actual time=27.977..655.752 rows=24012 loops=1)
+                                 Buffers: shared hit=99942
+                                 ->  Nested Loop Left Join  (cost=3756.65..30647.26 rows=24320 width=301) (actual time=27.955..638.317 rows=24012 loops=1)
+                                       Buffers: shared hit=99932
+                                       ->  Merge Left Join  (cost=3729.83..4142.05 rows=24320 width=269) (actual time=27.853..42.354 rows=24012 loops=1)
+                                             Merge Cond: (o.id = e.orden_id)
+                                             Buffers: shared hit=824
+                                             ->  Sort  (cost=449.91..459.91 rows=4002 width=243) (actual time=5.665..6.665 rows=4002 loops=1)
+                                                   Sort Key: o.id
+                                                   Sort Method: quicksort  Memory: 597kB
+                                                   Buffers: shared hit=113
+                                                   ->  Hash Join  (cost=12.47..210.46 rows=4002 width=243) (actual time=0.051..2.626 rows=4002 loops=1)
+                                                         Hash Cond: (o.tipo_trabajo_id = tt.id)
+                                                         Buffers: shared hit=113
+                                                         ->  Seq Scan on orden_trabajo o  (cost=0.00..187.07 rows=4002 width=67) (actual time=0.008..1.611 rows=4002 loops=1)
+                                                               Filter: ((estado)::text = ANY ('{REGISTRADA,EN_DISENO,EN_PRODUCCION,DETENIDA}'::text[]))
+                                                               Rows Removed by Filter: 1003
+                                                               Buffers: shared hit=112
+                                                         ->  Hash  (cost=11.10..11.10 rows=110 width=180) (actual time=0.023..0.024 rows=3 loops=1)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               Buffers: shared hit=1
+                                                               ->  Seq Scan on tipo_trabajo tt  (cost=0.00..11.10 rows=110 width=180) (actual time=0.011..0.012 rows=3 loops=1)
+                                                                     Buffers: shared hit=1
+                                             ->  Sort  (cost=3279.93..3355.96 rows=30415 width=42) (actual time=22.176..26.187 rows=30030 loops=1)
+                                                   Sort Key: e.orden_id
+                                                   Sort Method: quicksort  Memory: 2880kB
+                                                   Buffers: shared hit=711
+                                                   ->  Seq Scan on etapa_orden e  (cost=0.00..1015.15 rows=30415 width=42) (actual time=0.005..5.593 rows=30030 loops=1)
+                                                         Buffers: shared hit=711
+                                       ->  Hash Right Join  (cost=26.81..27.89 rows=1 width=32) (actual time=0.017..0.019 rows=1 loops=24012)
+                                             Hash Cond: (u.id = ea.responsable_id)
+                                             Buffers: shared hit=99108
+                                             ->  Seq Scan on usuario u  (cost=0.00..1.05 rows=5 width=31) (actual time=0.001..0.001 rows=5 loops=24012)
+                                                   Buffers: shared hit=24012
+                                             ->  Hash  (cost=26.80..26.80 rows=1 width=33) (actual time=0.014..0.014 rows=1 loops=24012)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                   Buffers: shared hit=75096
+                                                   ->  Subquery Scan on ea  (cost=26.79..26.80 rows=1 width=33) (actual time=0.007..0.007 rows=1 loops=24012)
+                                                         Buffers: shared hit=75096
+                                                         ->  Limit  (cost=26.79..26.79 rows=1 width=35) (actual time=0.007..0.007 rows=1 loops=24012)
+                                                               Buffers: shared hit=75096
+                                                               ->  Sort  (cost=26.79..26.79 rows=1 width=35) (actual time=0.006..0.006 rows=1 loops=24012)
+                                                                     Sort Key: x.secuencia
+                                                                     Sort Method: quicksort  Memory: 25kB
+                                                                     Buffers: shared hit=75096
+                                                                     ->  Bitmap Heap Scan on etapa_orden x  (cost=4.33..26.78 rows=1 width=35) (actual time=0.004..0.005 rows=1 loops=24012)
+                                                                           Recheck Cond: (orden_id = o.id)
+                                                                           Filter: ((estado)::text = ANY ('{DISPONIBLE,EN_CURSO,BLOQUEADA}'::text[]))
+                                                                           Rows Removed by Filter: 5
+                                                                           Heap Blocks: exact=27072
+                                                                           Buffers: shared hit=75096
+                                                                           ->  Bitmap Index Scan on uq_etapa_secuencia  (cost=0.00..4.33 rows=6 width=0) (actual time=0.002..0.002 rows=6 loops=24012)
+                                                                                 Index Cond: (orden_id = o.id)
+                                                                                 Buffers: shared hit=48024
+                                 ->  Memoize  (cost=0.15..8.17 rows=1 width=140) (actual time=0.000..0.000 rows=1 loops=24012)
+                                       Cache Key: ea.area_id
+                                       Cache Mode: logical
+                                       Hits: 24007  Misses: 5  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                       Buffers: shared hit=10
+                                       ->  Index Scan using area_pkey on area ar  (cost=0.14..8.16 rows=1 width=140) (actual time=0.004..0.004 rows=1 loops=5)
+                                             Index Cond: (id = ea.area_id)
+                                             Buffers: shared hit=10
+ Planning:
+   Buffers: shared hit=12
+ Planning Time: 1.288 ms
+ Execution Time: 728.551 ms
+(82 rows)
+
+== C) Filtro atrasadas, tamano=20 ==
+                                                                                                                                                                                                                                                                QUERY PLAN                                                                                                                                                                                                                                                                
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1625.02..1625.07 rows=22 width=513) (actual time=286.582..286.602 rows=20 loops=1)
+   Buffers: shared hit=37616
+   ->  Sort  (cost=1624.96..1625.52 rows=225 width=513) (actual time=286.579..286.594 rows=20 loops=1)
+         Sort Key: ((((o.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (o.fecha_compromiso < CURRENT_DATE))) DESC, ((((o.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (COALESCE(o.fecha_estimada_termino, o.fecha_compromiso) > o.fecha_compromiso))) DESC, o.fecha_compromiso, o.codigo
+         Sort Method: top-N heapsort  Memory: 33kB
+         Buffers: shared hit=37616
+         ->  WindowAgg  (cost=1597.05..1616.17 rows=225 width=513) (actual time=281.353..284.032 rows=1344 loops=1)
+               Buffers: shared hit=37616
+               ->  GroupAggregate  (cost=1597.05..1611.11 rows=225 width=445) (actual time=270.097..279.482 rows=1344 loops=1)
+                     Group Key: o.id, tt.nombre, ea.nombre, ar.nombre, u.nombre_completo
+                     Buffers: shared hit=37616
+                     ->  Sort  (cost=1597.05..1597.61 rows=225 width=437) (actual time=270.052..271.009 rows=8064 loops=1)
+                           Sort Key: o.id, tt.nombre, ea.nombre, ar.nombre, u.nombre_completo
+                           Sort Method: quicksort  Memory: 1649kB
+                           Buffers: shared hit=37616
+                           ->  Nested Loop Left Join  (cost=27.41..1588.26 rows=225 width=437) (actual time=0.159..254.650 rows=8064 loops=1)
+                                 Buffers: shared hit=37616
+                                 ->  Nested Loop Left Join  (cost=27.25..1566.45 rows=225 width=301) (actual time=0.140..247.278 rows=8064 loops=1)
+                                       Buffers: shared hit=37606
+                                       ->  Nested Loop Left Join  (cost=0.44..1294.67 rows=225 width=269) (actual time=0.071..13.807 rows=8064 loops=1)
+                                             Buffers: shared hit=4318
+                                             ->  Nested Loop  (cost=0.15..366.05 rows=37 width=243) (actual time=0.048..4.011 rows=1344 loops=1)
+                                                   Buffers: shared hit=114
+                                                   ->  Seq Scan on orden_trabajo o  (cost=0.00..362.25 rows=37 width=67) (actual time=0.020..2.899 rows=1344 loops=1)
+                                                         Filter: ((($3 IS NULL) OR ((codigo)::text ~~* $3) OR ((titulo)::text ~~* $3)) AND CASE $1 WHEN 'activas'::text THEN ((estado)::text = ANY ($2)) WHEN 'atrasadas'::text THEN (((estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (fecha_compromiso < CURRENT_DATE)) WHEN 'en_riesgo'::text THEN (((estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (COALESCE(fecha_estimada_termino, fecha_compromiso) > fecha_compromiso)) ELSE true END)
+                                                         Rows Removed by Filter: 3661
+                                                         Buffers: shared hit=112
+                                                   ->  Memoize  (cost=0.15..1.47 rows=1 width=180) (actual time=0.000..0.000 rows=1 loops=1344)
+                                                         Cache Key: o.tipo_trabajo_id
+                                                         Cache Mode: logical
+                                                         Hits: 1343  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                                         Buffers: shared hit=2
+                                                         ->  Index Scan using tipo_trabajo_pkey on tipo_trabajo tt  (cost=0.14..1.46 rows=1 width=180) (actual time=0.020..0.020 rows=1 loops=1)
+                                                               Index Cond: (id = o.tipo_trabajo_id)
+                                                               Buffers: shared hit=2
+                                             ->  Index Scan using uq_etapa_secuencia on etapa_orden e  (cost=0.29..25.04 rows=6 width=42) (actual time=0.003..0.005 rows=6 loops=1344)
+                                                   Index Cond: (orden_id = o.id)
+                                                   Buffers: shared hit=4204
+                                       ->  Hash Right Join  (cost=26.81..27.89 rows=1 width=32) (actual time=0.020..0.022 rows=1 loops=8064)
+                                             Hash Cond: (u.id = ea.responsable_id)
+                                             Buffers: shared hit=33288
+                                             ->  Seq Scan on usuario u  (cost=0.00..1.05 rows=5 width=31) (actual time=0.001..0.002 rows=5 loops=8064)
+                                                   Buffers: shared hit=8064
+                                             ->  Hash  (cost=26.80..26.80 rows=1 width=33) (actual time=0.016..0.016 rows=1 loops=8064)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                   Buffers: shared hit=25224
+                                                   ->  Subquery Scan on ea  (cost=26.79..26.80 rows=1 width=33) (actual time=0.008..0.009 rows=1 loops=8064)
+                                                         Buffers: shared hit=25224
+                                                         ->  Limit  (cost=26.79..26.79 rows=1 width=35) (actual time=0.008..0.008 rows=1 loops=8064)
+                                                               Buffers: shared hit=25224
+                                                               ->  Sort  (cost=26.79..26.79 rows=1 width=35) (actual time=0.007..0.007 rows=1 loops=8064)
+                                                                     Sort Key: x.secuencia
+                                                                     Sort Method: quicksort  Memory: 25kB
+                                                                     Buffers: shared hit=25224
+                                                                     ->  Bitmap Heap Scan on etapa_orden x  (cost=4.33..26.78 rows=1 width=35) (actual time=0.004..0.005 rows=1 loops=8064)
+                                                                           Recheck Cond: (orden_id = o.id)
+                                                                           Filter: ((estado)::text = ANY ('{DISPONIBLE,EN_CURSO,BLOQUEADA}'::text[]))
+                                                                           Rows Removed by Filter: 5
+                                                                           Heap Blocks: exact=9096
+                                                                           Buffers: shared hit=25224
+                                                                           ->  Bitmap Index Scan on uq_etapa_secuencia  (cost=0.00..4.33 rows=6 width=0) (actual time=0.002..0.002 rows=6 loops=8064)
+                                                                                 Index Cond: (orden_id = o.id)
+                                                                                 Buffers: shared hit=16128
+                                 ->  Memoize  (cost=0.15..8.17 rows=1 width=140) (actual time=0.000..0.000 rows=1 loops=8064)
+                                       Cache Key: ea.area_id
+                                       Cache Mode: logical
+                                       Hits: 8059  Misses: 5  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                       Buffers: shared hit=10
+                                       ->  Index Scan using area_pkey on area ar  (cost=0.14..8.16 rows=1 width=140) (actual time=0.004..0.005 rows=1 loops=5)
+                                             Index Cond: (id = ea.area_id)
+                                             Buffers: shared hit=10
+ Planning:
+   Buffers: shared hit=12
+ Planning Time: 1.653 ms
+ Execution Time: 287.297 ms
+(75 rows)
+
+== D) Última página de activas (pagina=200, tamano=20) ==
+                                                                                                                                                                                                                                                                QUERY PLAN                                                                                                                                                                                                                                                                
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1625.02..1625.07 rows=22 width=513) (actual time=724.362..724.380 rows=20 loops=1)
+   Buffers: shared hit=111749 dirtied=1, temp read=495 written=496
+   ->  Sort  (cost=1624.96..1625.52 rows=225 width=513) (actual time=723.836..724.164 rows=4000 loops=1)
+         Sort Key: ((((o.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (o.fecha_compromiso < CURRENT_DATE))) DESC, ((((o.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (COALESCE(o.fecha_estimada_termino, o.fecha_compromiso) > o.fecha_compromiso))) DESC, o.fecha_compromiso, o.codigo
+         Sort Method: quicksort  Memory: 1128kB
+         Buffers: shared hit=111749 dirtied=1, temp read=495 written=496
+         ->  WindowAgg  (cost=1597.05..1616.17 rows=225 width=513) (actual time=689.137..695.383 rows=4002 loops=1)
+               Buffers: shared hit=111749 dirtied=1, temp read=495 written=496
+               ->  GroupAggregate  (cost=1597.05..1611.11 rows=225 width=445) (actual time=660.879..684.986 rows=4002 loops=1)
+                     Group Key: o.id, tt.nombre, ea.nombre, ar.nombre, u.nombre_completo
+                     Buffers: shared hit=111749 dirtied=1, temp read=495 written=496
+                     ->  Sort  (cost=1597.05..1597.61 rows=225 width=437) (actual time=660.840..666.227 rows=24012 loops=1)
+                           Sort Key: o.id, tt.nombre, ea.nombre, ar.nombre, u.nombre_completo
+                           Sort Method: external merge  Disk: 3960kB
+                           Buffers: shared hit=111749 dirtied=1, temp read=495 written=496
+                           ->  Nested Loop Left Join  (cost=27.41..1588.26 rows=225 width=437) (actual time=0.262..619.183 rows=24012 loops=1)
+                                 Buffers: shared hit=111749 dirtied=1
+                                 ->  Nested Loop Left Join  (cost=27.25..1566.45 rows=225 width=301) (actual time=0.225..601.715 rows=24012 loops=1)
+                                       Buffers: shared hit=111739 dirtied=1
+                                       ->  Nested Loop Left Join  (cost=0.44..1294.67 rows=225 width=269) (actual time=0.108..29.373 rows=24012 loops=1)
+                                             Buffers: shared hit=12631 dirtied=1
+                                             ->  Nested Loop  (cost=0.15..366.05 rows=37 width=243) (actual time=0.076..5.428 rows=4002 loops=1)
+                                                   Buffers: shared hit=114
+                                                   ->  Seq Scan on orden_trabajo o  (cost=0.00..362.25 rows=37 width=67) (actual time=0.026..2.718 rows=4002 loops=1)
+                                                         Filter: ((($3 IS NULL) OR ((codigo)::text ~~* $3) OR ((titulo)::text ~~* $3)) AND CASE $1 WHEN 'activas'::text THEN ((estado)::text = ANY ($2)) WHEN 'atrasadas'::text THEN (((estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (fecha_compromiso < CURRENT_DATE)) WHEN 'en_riesgo'::text THEN (((estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (COALESCE(fecha_estimada_termino, fecha_compromiso) > fecha_compromiso)) ELSE true END)
+                                                         Rows Removed by Filter: 1003
+                                                         Buffers: shared hit=112
+                                                   ->  Memoize  (cost=0.15..1.47 rows=1 width=180) (actual time=0.000..0.000 rows=1 loops=4002)
+                                                         Cache Key: o.tipo_trabajo_id
+                                                         Cache Mode: logical
+                                                         Hits: 4001  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                                         Buffers: shared hit=2
+                                                         ->  Index Scan using tipo_trabajo_pkey on tipo_trabajo tt  (cost=0.14..1.46 rows=1 width=180) (actual time=0.037..0.038 rows=1 loops=1)
+                                                               Index Cond: (id = o.tipo_trabajo_id)
+                                                               Buffers: shared hit=2
+                                             ->  Index Scan using uq_etapa_secuencia on etapa_orden e  (cost=0.29..25.04 rows=6 width=42) (actual time=0.003..0.004 rows=6 loops=4002)
+                                                   Index Cond: (orden_id = o.id)
+                                                   Buffers: shared hit=12517 dirtied=1
+                                       ->  Hash Right Join  (cost=26.81..27.89 rows=1 width=32) (actual time=0.016..0.018 rows=1 loops=24012)
+                                             Hash Cond: (u.id = ea.responsable_id)
+                                             Buffers: shared hit=99108
+                                             ->  Seq Scan on usuario u  (cost=0.00..1.05 rows=5 width=31) (actual time=0.001..0.001 rows=5 loops=24012)
+                                                   Buffers: shared hit=24012
+                                             ->  Hash  (cost=26.80..26.80 rows=1 width=33) (actual time=0.013..0.013 rows=1 loops=24012)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                   Buffers: shared hit=75096
+                                                   ->  Subquery Scan on ea  (cost=26.79..26.80 rows=1 width=33) (actual time=0.007..0.007 rows=1 loops=24012)
+                                                         Buffers: shared hit=75096
+                                                         ->  Limit  (cost=26.79..26.79 rows=1 width=35) (actual time=0.007..0.007 rows=1 loops=24012)
+                                                               Buffers: shared hit=75096
+                                                               ->  Sort  (cost=26.79..26.79 rows=1 width=35) (actual time=0.006..0.006 rows=1 loops=24012)
+                                                                     Sort Key: x.secuencia
+                                                                     Sort Method: quicksort  Memory: 25kB
+                                                                     Buffers: shared hit=75096
+                                                                     ->  Bitmap Heap Scan on etapa_orden x  (cost=4.33..26.78 rows=1 width=35) (actual time=0.004..0.004 rows=1 loops=24012)
+                                                                           Recheck Cond: (orden_id = o.id)
+                                                                           Filter: ((estado)::text = ANY ('{DISPONIBLE,EN_CURSO,BLOQUEADA}'::text[]))
+                                                                           Rows Removed by Filter: 5
+                                                                           Heap Blocks: exact=27072
+                                                                           Buffers: shared hit=75096
+                                                                           ->  Bitmap Index Scan on uq_etapa_secuencia  (cost=0.00..4.33 rows=6 width=0) (actual time=0.002..0.002 rows=6 loops=24012)
+                                                                                 Index Cond: (orden_id = o.id)
+                                                                                 Buffers: shared hit=48024
+                                 ->  Memoize  (cost=0.15..8.17 rows=1 width=140) (actual time=0.000..0.000 rows=1 loops=24012)
+                                       Cache Key: ea.area_id
+                                       Cache Mode: logical
+                                       Hits: 24007  Misses: 5  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                       Buffers: shared hit=10
+                                       ->  Index Scan using area_pkey on area ar  (cost=0.14..8.16 rows=1 width=140) (actual time=0.008..0.008 rows=1 loops=5)
+                                             Index Cond: (id = ea.area_id)
+                                             Buffers: shared hit=10
+ Planning Time: 0.051 ms
+ Execution Time: 726.021 ms
+(73 rows)
+
+== E) Búsqueda q=VOL-0001 (activas, tamano=20) ==
+                                                                                                                                                                                                                                                                QUERY PLAN                                                                                                                                                                                                                                                                
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1625.02..1625.07 rows=22 width=513) (actual time=10.019..10.028 rows=8 loops=1)
+   Buffers: shared hit=354
+   ->  Sort  (cost=1624.96..1625.52 rows=225 width=513) (actual time=10.015..10.022 rows=8 loops=1)
+         Sort Key: ((((o.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (o.fecha_compromiso < CURRENT_DATE))) DESC, ((((o.estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (COALESCE(o.fecha_estimada_termino, o.fecha_compromiso) > o.fecha_compromiso))) DESC, o.fecha_compromiso, o.codigo
+         Sort Method: quicksort  Memory: 27kB
+         Buffers: shared hit=354
+         ->  WindowAgg  (cost=1597.05..1616.17 rows=225 width=513) (actual time=9.974..9.994 rows=8 loops=1)
+               Buffers: shared hit=354
+               ->  GroupAggregate  (cost=1597.05..1611.11 rows=225 width=445) (actual time=9.894..9.946 rows=8 loops=1)
+                     Group Key: o.id, tt.nombre, ea.nombre, ar.nombre, u.nombre_completo
+                     Buffers: shared hit=354
+                     ->  Sort  (cost=1597.05..1597.61 rows=225 width=437) (actual time=9.864..9.874 rows=48 loops=1)
+                           Sort Key: o.id, tt.nombre, ea.nombre, ar.nombre, u.nombre_completo
+                           Sort Method: quicksort  Memory: 33kB
+                           Buffers: shared hit=354
+                           ->  Nested Loop Left Join  (cost=27.41..1588.26 rows=225 width=437) (actual time=0.188..9.784 rows=48 loops=1)
+                                 Buffers: shared hit=354
+                                 ->  Nested Loop Left Join  (cost=27.25..1566.45 rows=225 width=301) (actual time=0.173..9.723 rows=48 loops=1)
+                                       Buffers: shared hit=344
+                                       ->  Nested Loop Left Join  (cost=0.44..1294.67 rows=225 width=269) (actual time=0.106..7.773 rows=48 loops=1)
+                                             Buffers: shared hit=140
+                                             ->  Nested Loop  (cost=0.15..366.05 rows=37 width=243) (actual time=0.089..7.703 rows=8 loops=1)
+                                                   Buffers: shared hit=114
+                                                   ->  Seq Scan on orden_trabajo o  (cost=0.00..362.25 rows=37 width=67) (actual time=0.061..7.668 rows=8 loops=1)
+                                                         Filter: ((($3 IS NULL) OR ((codigo)::text ~~* $3) OR ((titulo)::text ~~* $3)) AND CASE $1 WHEN 'activas'::text THEN ((estado)::text = ANY ($2)) WHEN 'atrasadas'::text THEN (((estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (fecha_compromiso < CURRENT_DATE)) WHEN 'en_riesgo'::text THEN (((estado)::text <> ALL ('{TERMINADA,ENTREGADA,ANULADA}'::text[])) AND (COALESCE(fecha_estimada_termino, fecha_compromiso) > fecha_compromiso)) ELSE true END)
+                                                         Rows Removed by Filter: 4997
+                                                         Buffers: shared hit=112
+                                                   ->  Memoize  (cost=0.15..1.47 rows=1 width=180) (actual time=0.003..0.003 rows=1 loops=8)
+                                                         Cache Key: o.tipo_trabajo_id
+                                                         Cache Mode: logical
+                                                         Hits: 7  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                                         Buffers: shared hit=2
+                                                         ->  Index Scan using tipo_trabajo_pkey on tipo_trabajo tt  (cost=0.14..1.46 rows=1 width=180) (actual time=0.020..0.020 rows=1 loops=1)
+                                                               Index Cond: (id = o.tipo_trabajo_id)
+                                                               Buffers: shared hit=2
+                                             ->  Index Scan using uq_etapa_secuencia on etapa_orden e  (cost=0.29..25.04 rows=6 width=42) (actual time=0.005..0.007 rows=6 loops=8)
+                                                   Index Cond: (orden_id = o.id)
+                                                   Buffers: shared hit=26
+                                       ->  Hash Right Join  (cost=26.81..27.89 rows=1 width=32) (actual time=0.028..0.030 rows=1 loops=48)
+                                             Hash Cond: (u.id = ea.responsable_id)
+                                             Buffers: shared hit=204
+                                             ->  Seq Scan on usuario u  (cost=0.00..1.05 rows=5 width=31) (actual time=0.001..0.001 rows=5 loops=48)
+                                                   Buffers: shared hit=48
+                                             ->  Hash  (cost=26.80..26.80 rows=1 width=33) (actual time=0.014..0.014 rows=1 loops=48)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                   Buffers: shared hit=156
+                                                   ->  Subquery Scan on ea  (cost=26.79..26.80 rows=1 width=33) (actual time=0.007..0.008 rows=1 loops=48)
+                                                         Buffers: shared hit=156
+                                                         ->  Limit  (cost=26.79..26.79 rows=1 width=35) (actual time=0.007..0.007 rows=1 loops=48)
+                                                               Buffers: shared hit=156
+                                                               ->  Sort  (cost=26.79..26.79 rows=1 width=35) (actual time=0.007..0.007 rows=1 loops=48)
+                                                                     Sort Key: x.secuencia
+                                                                     Sort Method: quicksort  Memory: 25kB
+                                                                     Buffers: shared hit=156
+                                                                     ->  Bitmap Heap Scan on etapa_orden x  (cost=4.33..26.78 rows=1 width=35) (actual time=0.004..0.005 rows=1 loops=48)
+                                                                           Recheck Cond: (orden_id = o.id)
+                                                                           Filter: ((estado)::text = ANY ('{DISPONIBLE,EN_CURSO,BLOQUEADA}'::text[]))
+                                                                           Rows Removed by Filter: 5
+                                                                           Heap Blocks: exact=60
+                                                                           Buffers: shared hit=156
+                                                                           ->  Bitmap Index Scan on uq_etapa_secuencia  (cost=0.00..4.33 rows=6 width=0) (actual time=0.002..0.002 rows=6 loops=48)
+                                                                                 Index Cond: (orden_id = o.id)
+                                                                                 Buffers: shared hit=96
+                                 ->  Memoize  (cost=0.15..8.17 rows=1 width=140) (actual time=0.001..0.001 rows=1 loops=48)
+                                       Cache Key: ea.area_id
+                                       Cache Mode: logical
+                                       Hits: 43  Misses: 5  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                       Buffers: shared hit=10
+                                       ->  Index Scan using area_pkey on area ar  (cost=0.14..8.16 rows=1 width=140) (actual time=0.003..0.003 rows=1 loops=5)
+                                             Index Cond: (id = ea.area_id)
+                                             Buffers: shared hit=10
+ Planning Time: 0.036 ms
+ Execution Time: 10.401 ms
+(73 rows)
+
+== F) Contadores del panel (resumenPanel, misma petición GET /panel) ==
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=248.19..248.20 rows=1 width=32) (actual time=2.099..2.101 rows=1 loops=1)
+   Buffers: shared hit=113
+   InitPlan 1 (returns $0)
+     ->  Aggregate  (cost=1.07..1.08 rows=1 width=8) (actual time=0.010..0.011 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on alerta_insumo  (cost=0.00..1.06 rows=5 width=0) (actual time=0.007..0.008 rows=5 loops=1)
+                 Filter: ((estado)::text <> 'CERRADA'::text)
+                 Buffers: shared hit=1
+   ->  Seq Scan on orden_trabajo  (cost=0.00..187.07 rows=4002 width=8) (actual time=0.007..1.489 rows=4002 loops=1)
+         Filter: ((estado)::text = ANY ('{REGISTRADA,EN_DISENO,EN_PRODUCCION,DETENIDA}'::text[]))
+         Rows Removed by Filter: 1003
+         Buffers: shared hit=112
+ Planning:
+   Buffers: shared hit=53
+ Planning Time: 0.860 ms
+ Execution Time: 2.134 ms
+(16 rows)
+
+== G) 20 ejecuciones de A para la distribución de tiempos (ms, 	iming del cliente psql) ==
+Timing is on.
+Time: 665.390 ms
+Time: 644.278 ms
+Time: 708.273 ms
+Time: 639.026 ms
+Time: 759.817 ms
+Time: 759.521 ms
+Time: 918.624 ms
+Time: 765.605 ms
+Time: 738.152 ms
+Time: 732.736 ms
+Time: 712.347 ms
+Time: 645.438 ms
+Time: 646.053 ms
+Time: 646.489 ms
+Time: 640.700 ms
+Time: 661.059 ms
+Time: 643.789 ms
+Time: 849.201 ms
+Time: 793.385 ms
+Time: 759.164 ms
+Timing is off.
+
+== Resumen de G (20 ejecuciones de A, tiempo de cliente psql) ==
+n=20 min=639.026 ms  p50=708.273 ms  p95=849.201 ms  max=918.624 ms
+
+== H) GET /api/v1/panel?filtro=activas&pagina=1&tamano=20 vía nginx (http://localhost:8080), Encargada, 30 peticiones secuenciales tras 3 de calentamiento (curl, no k6) ==
+codigo tiempo_total_s
+200 0.753472
+200 0.719754
+200 0.848345
+200 0.801598
+200 0.845662
+200 0.730507
+200 0.798103
+200 0.801037
+200 0.817659
+200 0.666857
+200 0.720021
+200 0.637085
+200 0.729006
+200 0.841790
+200 0.870196
+200 0.732751
+200 0.672774
+200 0.869529
+200 0.703394
+200 0.654186
+200 0.654457
+200 0.671621
+200 0.701613
+200 0.691284
+200 0.827516
+200 1.032925
+200 0.783426
+200 0.718036
+200 0.711796
+200 0.733052
+estado HTTP:      30 200
+n=30 min=637.1 ms  p50=730.5 ms  p95=870.2 ms  max=1032.9 ms
+Respuesta: total 4002, filas 20, resumen {activas: 4002, atrasadas: 1344, enRiesgo: 1714, alertasAbiertas: 5}
+
+== Comparación con ES2 (Tabla L.3, CP-23) ==
+Esperado: uso de ix_ot_estado_compromiso; p95 < 300 ms (k6 a 10 VU).
+Obtenido: el plan NO usa ix_ot_estado_compromiso (Seq Scan on orden_trabajo, 4002 filas activas de 5005).
+Obtenido: Execution Time A = 706,1 ms; B (50) = 728,6 ms; p95 SQL (20 ejec.) = 849,2 ms; p95 HTTP secuencial (30) = 870,2 ms. Umbral 300 ms superado sin concurrencia.
+k6 a 10 VU: no ejecutado (k6 no instalado).

@@ -49,6 +49,7 @@
 | Aprobación de diseño | HU-06, CU-07 | El flujo diseñador–vendedor sigue fuera del sistema | Versión posterior |
 | Relay outbox PostgreSQL → MongoDB | — | Sin consistencia eventual entre motores | La bitácora se escribe directo en Mongo desde la API; el outbox queda como mejora |
 | Notificaciones push/correo | — | Las alertas solo se ven dentro del sistema | Alertas visibles en `insumos` y `panel` |
+| Refresh token con rotación (D2 a) | — | La sesión dura 10 min y luego pide volver a entrar; sin revocación del token emitido | Access JWT corto (D14), `sessionStorage` por pestaña (D27); D28 |
 
 ---
 
@@ -57,7 +58,7 @@
 | ID | Decisión | Opciones | Recomendación |
 |---|---|---|---|
 | D1 | Frontend | (a) Migrar a React + Vite reutilizando `estilos.css`; (b) conectar el HTML actual a la API | **Adoptada (a)**: coincide con el diseño aprobado, sin cambio que justificar. Se migran solo las 8 pantallas del MVP. Si los flujos 1–3 no quedan listos en React antes del cierre de F5/F6, se pasa a (b). |
-| D2 | Sesión | (a) Access JWT corto + refresh en cookie `httpOnly` con rotación; (b) solo access JWT | **Adoptada (a)**, pero se construye al final (paso 5 de §4.1). Si no queda listo al congelar el código, se pasa a (b) y CP-26/CP-30 se excluyen. |
+| D2 | Sesión | (a) Access JWT corto + refresh en cookie `httpOnly` con rotación; (b) solo access JWT | **Adoptada (a)**, pero se construye al final (paso 5 de §4.1). Si no queda listo al congelar el código, se pasa a (b) y CP-26/CP-30 se excluyen. **Al congelar `v0.9` se pasó a (b)** (D28 en `docs/decisiones.md`). |
 | D3 | Uso de MongoDB | Bitácora de auditoría (`bitacora_eventos`) | Escritura directa desde la API en cada acción relevante; lectura solo para Administrador (CU-11). |
 | D4 | Nube | (a) Solo local con Docker + plan de nube descrito; (b) desplegar BD en un servicio gestionado | **(a)** como base; **(b)** solo si sobra tiempo. La plantilla 6.3 pide "cómo se considera su utilización en la nube, cuando corresponda". |
 
@@ -69,18 +70,18 @@ Las respuestas no vienen del cliente: se declaran como **supuestos de diseño** 
 
 | # | Pregunta prioritaria | Supuesto adoptado | Fuente / justificación |
 |---|---|---|---|
-| 1 | Problema principal a resolver primero | _completar_ | |
+| 1 | Problema principal a resolver primero | Saber en qué etapa va cada trabajo y a quién le toca seguir | Diagnóstico U1 (Informe 2 §1) |
 | 2 | Trabajos con etapas estandarizables | Uniformes y letreros | Plantillas de ES2 |
 | 3 | Quién define y valida las etapas | Encargada de Producción | HU-07 |
 | 4 | Cómo se asigna y se indica qué hacer después | Asignación por la Encargada; "Mi Trabajo" muestra la siguiente actividad | HU-01, HU-08 |
-| 5 | Datos necesarios para registrar un trabajo | _completar_ (campos de `orden_trabajo`) | DDL |
+| 5 | Datos necesarios para registrar un trabajo | Tipo de trabajo, título, institución cliente (sin contacto), cantidad, especificaciones, prioridad y fecha comprometida | Campos de `orden_trabajo` (DDL) |
 | 6 | Cómo se determinan los insumos antes de producir | Requerimiento derivado de la plantilla × cantidad | `plantilla_insumo` |
 | 7 | Inventario completo o anticipar faltantes | Anticipar faltantes con stock mínimo | HU-09 |
 | 8 | Estados y eventos de avance | Estados de etapa: PENDIENTE, DISPONIBLE, EN_CURSO, BLOQUEADA, TERMINADA, OMITIDA | CP-01/CP-02 |
 | 9 | Roles y permisos | 5 roles: Operario, Vendedor, Diseñador, Encargada, Administrador | Tabla 7.1 ES2 |
 | 10 | Dispositivos y conectividad | Celular del operario + PC de oficina; mobile-first | RNF-01, RNF-02 |
 | 11 | Funcionalidades de la primera versión | Los 4 flujos de §1.1 | Este roadmap |
-| 12 | Quién aprueba y cómo se acepta | _completar_ | |
+| 12 | Quién aprueba y cómo se acepta | La Encargada de Producción, tras una demostración de los 4 flujos con datos ficticios | Supuesto propio (no confirmado) |
 
 ---
 
@@ -112,99 +113,100 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ### F0 — Preparación y trazabilidad
 
-- [ ] Crear el repositorio `sgp-kotoduo` como monorepo: `api/`, `web/`, `db/`, `docs/`, `evidencias/`.
-- [ ] Crear un tablero (GitHub Projects) con una tarjeta por HU del MVP. Evidencia para 3.1.3.6.
-- [ ] Definir los IDs estables: HU, CU, CP, `DEF-xx` (defectos), `E-xx` (evidencias).
-- [ ] Cerrar las decisiones D1–D4 y completar los supuestos de §3.
-- [ ] CI mínimo (GitHub Actions): lint + typecheck + tests unitarios.
-- [ ] `.env.example` con valores ficticios. Ningún secreto real en el repositorio.
+- [x] Crear el repositorio `sgp-kotoduo` como monorepo: `api/`, `web/`, `db/`, `docs/`, `evidencias/`.
+- [x] Crear un tablero (GitHub Projects) con una tarjeta por HU del MVP. Evidencia para 3.1.3.6.
+- [x] Definir los IDs estables: HU, CU, CP, `DEF-xx` (defectos), `E-xx` (evidencias).
+- [x] Cerrar las decisiones D1–D4 y completar los supuestos de §3. _D1–D4 cerradas en `docs/decisiones.md`; los 12 supuestos declarados como no confirmados en la Tabla 4.4 del Informe 3._
+- [x] Verificación local por terminal (`npm run verify`): lint + typecheck + tests, con log fechado en `evidencias/ejecuciones/`. Reemplaza el CI de GitHub Actions, que la rúbrica no exige.
+- [x] `.env.example` con valores ficticios. Ningún secreto real en el repositorio.
 - [ ] Consultar al docente cómo se evalúa 3.1.3.6 (colaboración) en un proyecto individual.
 
 **Salida:** repositorio con la estructura, tablero cargado y decisiones registradas en `docs/decisiones.md`.
 
 ### F1 — Base de datos · criterio 3.1.2
 
-- [ ] Reutilizar `ddl_postgresql.sql` (16 tablas). Las tablas fuera del MVP (`aprobacion_diseno`, `outbox_evento`) se conservan sin uso y se declara.
-- [ ] Revisar las restricciones que se van a probar: `NOT NULL`, `FOREIGN KEY`, `CHECK` de estados y de stock, `UNIQUE` del código de OT.
-- [ ] Seed reproducible: 5 usuarios (uno por rol), 2 plantillas, insumos con stock y mínimo, `DEMO-01` como OT de ejemplo.
-- [ ] Script de volumen: 5.000 OT y 30.000 etapas, para el `EXPLAIN ANALYZE` de CP-23.
-- [ ] Mongo: colección `bitacora_eventos` con validador de esquema e índice por fecha y usuario.
-- [ ] Prueba manual de integridad: `INSERT` inválidos (nulo, FK inexistente, estado fuera del `CHECK`) → captura del rechazo y consulta de que no quedó guardado.
+- [x] Reutilizar `ddl_postgresql.sql` (16 tablas). Las tablas fuera del MVP (`aprobacion_diseno`, `outbox_evento`) se conservan sin uso y se declara.
+- [x] Revisar las restricciones que se van a probar: `NOT NULL`, `FOREIGN KEY`, `CHECK` de estados y de stock, `UNIQUE` del código de OT.
+- [x] Seed reproducible: 5 usuarios (uno por rol), 2 plantillas, insumos con stock y mínimo, `DEMO-01` como OT de ejemplo.
+- [x] Script de volumen: 5.000 OT y 30.000 etapas, para el `EXPLAIN ANALYZE` de CP-23.
+- [x] Mongo: colección `bitacora_eventos` con validador de esquema e índice por fecha y usuario.
+- [x] Prueba manual de integridad: `INSERT` inválidos (nulo, FK inexistente, estado fuera del `CHECK`) → captura del rechazo y consulta de que no quedó guardado.
 
 **Salida:** `docker compose up` levanta ambas bases con esquema y seed. Evidencias de restricciones capturadas (E-xx).
 
 ### F2 — API núcleo y seguridad · criterio 3.1.3
 
-- [ ] Express + TypeScript con capas separadas: dominio (reglas puras, testeables con Vitest), aplicación (casos de uso), infraestructura (repositorios PG/Mongo, HTTP).
-- [ ] Validación de entrada con esquemas (zod), por ejemplo `NuevaOrdenSchema`, que rechace campos extra.
-- [ ] Manejo central de errores: respuestas uniformes, sin trazas internas hacia el cliente.
-- [ ] Autenticación: hash de contraseñas con argon2 o bcrypt, política de contraseñas (CP-07), JWT y refresh según D2.
-- [ ] Autorización RBAC **en el servidor**: middleware de permisos con `PERMISOS_POR_ROL` (CP-08) y control de propiedad de la etapa contra IDOR (CP-27).
-- [ ] Endurecimiento: límite de intentos y bloqueo de login (CP-29), `helmet`, CORS restringido, consultas parametrizadas (CP-24).
-- [ ] Bitácora: cada acción relevante escribe un evento en Mongo (HU-12).
+- [x] Express + TypeScript con capas separadas: dominio (reglas puras, testeables con Vitest), aplicación (casos de uso), infraestructura (repositorios PG/Mongo, HTTP).
+- [x] Validación de entrada con esquemas (zod), por ejemplo `NuevaOrdenSchema`, que rechace campos extra.
+- [x] Manejo central de errores: respuestas uniformes, sin trazas internas hacia el cliente.
+- [x] Autenticación: hash de contraseñas con argon2 o bcrypt, política de contraseñas (CP-07), JWT y refresh según D2. _El refresh (D2) queda para el paso 5 de §4.2._
+- [x] Cambio de clave obligatorio: si `debe_cambiar_clave` es verdadero, el login solo permite `POST /auth/cambiar-clave` (aplica CP-07). El `admin` del seed parte así (D12).
+- [x] Autorización RBAC **en el servidor**: middleware de permisos con `PERMISOS_POR_ROL` (CP-08) y control de propiedad de la etapa contra IDOR (CP-27). _El control de propiedad se aplica en F3, cuando existan las rutas de etapas._
+- [x] Endurecimiento: límite de intentos y bloqueo de login (CP-29), `helmet`, CORS restringido, consultas parametrizadas (CP-24).
+- [x] Bitácora: cada acción relevante escribe un evento en Mongo (HU-12).
 
 **Salida:** login funcional y rutas protegidas. Una tabla de perfiles × operaciones en `docs/seguridad.md`.
 
 ### F3 — Órdenes y etapas · flujos 2 y 3
 
-- [ ] Dominio: `generarEtapas` (CP-03), `calcularFechaEstimada` (CP-04) y la máquina de estados `puedeTransicionar` (CP-01, CP-02).
-- [ ] `POST /ordenes`: crea la OT con código `OT-AAAA-NNNN`, genera sus etapas y sus requerimientos de insumo en una sola transacción (CP-11).
-- [ ] Asignación mínima de responsables (HU-08 parcial).
-- [ ] `GET /mi-trabajo`: etapas del operario y siguiente actividad.
-- [ ] `POST /etapas/{id}/iniciar` y `/terminar` con bloqueo optimista por `version` (CP-12, CP-19). Terminar la última etapa cierra la OT (CP-13).
-- [ ] `GET /panel`: órdenes atrasadas y en riesgo (CP-18), sobre `v_panel_ordenes` paginada.
+- [x] Dominio: `generarEtapas` (CP-03), `calcularFechaEstimada` (CP-04) y la máquina de estados `puedeTransicionar` (CP-01, CP-02).
+- [x] `POST /ordenes`: crea la OT con código `OT-AAAA-NNNN`, genera sus etapas y sus requerimientos de insumo en una sola transacción (CP-11).
+- [x] Asignación mínima de responsables (HU-08 parcial).
+- [x] `GET /mi-trabajo`: etapas del operario y siguiente actividad.
+- [x] `POST /etapas/{id}/iniciar` y `/terminar` con bloqueo optimista por `version` (CP-12, CP-19). Terminar la última etapa cierra la OT (CP-13).
+- [x] `GET /panel`: órdenes atrasadas y en riesgo (CP-18), sobre `v_panel_ordenes` paginada.
 
 **Salida:** flujos 2 y 3 operativos vía API, con tests unitarios y de integración en verde.
 
 ### F4 — Insumos y alertas · flujo 4
 
-- [ ] Registrar consumos al terminar una etapa (`movimiento_insumo`).
-- [ ] Alerta automática **única** cuando el stock queda en el mínimo o bajo él (regla `≤`; CP-05, CP-14).
-- [ ] `POST /alertas`: reporte manual de faltante del operario (CP-15).
-- [ ] `GET /insumos` y `GET /alertas` para la Encargada.
+- [x] Registrar consumos al terminar una etapa (`movimiento_insumo`).
+- [x] Alerta automática **única** cuando el stock queda en el mínimo o bajo él (regla `≤`; CP-05, CP-14).
+- [x] `POST /alertas`: reporte manual de faltante del operario (CP-15).
+- [x] `GET /insumos` y `GET /alertas` para la Encargada.
 
 **Salida:** flujo 4 operativo vía API.
 
 ### F5 — Frontend operativo · criterio 3.1.1
 
-- [ ] Migrar las 8 pantallas del MVP según D1, reutilizando `estilos.css` y los componentes del prototipo.
-- [ ] Guardas de ruta por rol en el cliente (solo UX; la autorización real está en la API).
-- [ ] Validaciones en los formularios con mensajes coherentes y estados de carga, error y vacío.
-- [ ] Consistencia: mismos botones, etiquetas, mensajes y forma de volver atrás entre "Nueva OT" y "Detalle OT".
-- [ ] Mobile-first: revisar 360 px (observación pendiente de ES2) y la navegación con teclado.
+- [x] Migrar las 8 pantallas del MVP según D1, reutilizando `estilos.css` y los componentes del prototipo.
+- [x] Guardas de ruta por rol en el cliente (solo UX; la autorización real está en la API).
+- [x] Validaciones en los formularios con mensajes coherentes y estados de carga, error y vacío.
+- [x] Consistencia: mismos botones, etiquetas, mensajes y forma de volver atrás entre "Nueva OT" y "Detalle OT".
+- [x] Mobile-first: revisar 360 px (observación pendiente de ES2) y la navegación con teclado.
 
 **Salida:** los 4 flujos completos desde el navegador, con el dato recuperado tras guardarlo.
 
 ### F6 — Entorno y documentación · criterio 3.1.4
 
-- [ ] `docker-compose.yml` del stack completo: `postgres`, `mongo`, `api`, `web`.
-- [ ] `README.md` de instalación: SO probado, versiones, comandos en orden, seed, verificación con `DEMO-01`, problemas conocidos.
-- [ ] Manual de usuario breve, por rol.
-- [ ] **Prueba desde un clon limpio**, idealmente hecha por un compañero. Registrar los pasos que generaron dudas, corregir y repetir (la guía 4.2 lo valora).
-- [ ] Sin rutas absolutas personales ni secretos.
+- [x] `docker-compose.yml` del stack completo: `postgres`, `mongo`, `api`, `web`. El servicio `api` fija `NODE_ENV=production` (hallazgo R1-001 de la revisión de F3). _`web` es nginx: sirve el build, reenvía `/api` y fija la CSP. La API no se publica y confía en un salto de proxy (`TRUST_PROXY=1`)._
+- [x] `README.md` de instalación: SO probado, versiones, comandos en orden, seed, verificación con `DEMO-01`, problemas conocidos.
+- [x] Manual de usuario breve, por rol. _`docs/manual-usuario.md`._
+- [x] **Prueba desde un clon limpio**, idealmente hecha por un compañero. Registrar los pasos que generaron dudas, corregir y repetir (la guía 4.2 lo valora). _Hecha en local por el autor siguiendo el README (E-19), con build sin caché y E2E de los 4 flujos sobre el stack (E-20, E-21). Falta la prueba por otra persona._
+- [x] Sin rutas absolutas personales ni secretos. _Búsqueda en E-19 §6: 0 coincidencias._
 
 **Salida:** instalación reproducible con su evidencia (registro de consola y capturas).
 
 ### F7 — Ejecución y validación de pruebas · criterios 3.1.5 y 3.1.6
 
-- [ ] **Congelar una versión** (tag `v0.9`) y ejecutar el protocolo sobre ella.
-- [ ] Actualizar el plan de ES2 al MVP: matriz HU–CU–CP con alcance y exclusiones (§5).
-- [ ] Calcular la cobertura con denominador explícito ("X CU cubiertos de Y implementados").
-- [ ] Ejecutar cada CP con una ficha: precondiciones, datos, pasos, esperado, **obtenido (observado de verdad)**, fecha, versión, estado.
-- [ ] Estados permitidos: Aprobado / Fallido / Bloqueado / No ejecutado.
-- [ ] Cada fallo genera un `DEF-xx` con causa: hipótesis o confirmada.
-- [ ] Corregir, publicar `v1.0` y **re-ejecutar sin borrar la ejecución fallida**.
-- [ ] Resumen numérico de estados, separando defectos críticos de menores.
-- [ ] Tabla de recomendaciones: hallazgo → acción → cómo verificar. Separar las corregidas de las propuestas para una versión futura.
+- [x] **Congelar una versión** (tag `v0.9`) y ejecutar el protocolo sobre ella. _`v0.9` = `df19bbc`; 26 CP ejecutados._
+- [x] Actualizar el plan de ES2 al MVP: matriz HU–CU–CP con alcance y exclusiones (§5). _`docs/plan-pruebas.md`._
+- [x] Calcular la cobertura con denominador explícito ("X CU cubiertos de Y implementados"). _9 de 10 CU; CU-12 sin CP en ES2._
+- [x] Ejecutar cada CP con una ficha: precondiciones, datos, pasos, esperado, **obtenido (observado de verdad)**, fecha, versión, estado. _`evidencias/ejecuciones/fichas/`._
+- [x] Estados permitidos: Aprobado / Fallido / Bloqueado / No ejecutado.
+- [x] Cada fallo genera un `DEF-xx` con causa: hipótesis o confirmada. _DEF-01 a DEF-03, causas confirmadas._
+- [x] Corregir, publicar `v1.0` y **re-ejecutar sin borrar la ejecución fallida**. _`v1.0` = `79377e5`; CP-23, CP-32 y CP-36 aprobados._
+- [x] Resumen numérico de estados, separando defectos críticos de menores. _`docs/plan-pruebas.md` §6._
+- [x] Tabla de recomendaciones: hallazgo → acción → cómo verificar. Separar las corregidas de las propuestas para una versión futura. _`docs/plan-pruebas.md` §7._
 
 **Salida:** `evidencias/` con fichas, reportes de herramientas (Vitest, Supertest, Playwright, k6) y registro de defectos.
 
 ### F8 — Informe 3 y demo · criterios 3.1.6.14 y 3.1.6.15
 
-- [ ] Redactar el informe según §8.
-- [ ] Ensayar el guion de demo (§9) con cronómetro. **Máximo 10 minutos.**
-- [ ] Preparar una hoja de apoyo para preguntas: dónde está cada HU en el código, qué CP la prueba y qué quedó pendiente.
-- [ ] Repasar la checklist (§11).
+- [x] Redactar el informe según §8. _`informe-3/Informe3_Kotoduo_SGP.md` y su `.docx` generado sobre la plantilla oficial._
+- [ ] Ensayar el guion de demo (§9) con cronómetro. **Máximo 10 minutos.** _Guion con comandos y tiempos en `informe-3/apoyo/guion-demo.md`; comandos de solo lectura probados contra el stack._
+- [x] Preparar una hoja de apoyo para preguntas: dónde está cada HU en el código, qué CP la prueba y qué quedó pendiente. _`informe-3/apoyo/hoja-apoyo-preguntas.md`._
+- [x] Repasar la checklist (§11).
 
 ---
 
@@ -258,6 +260,7 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 | CP-17, CP-31 | Evidencias de etapa fuera del MVP | — |
 | CP-21, CP-22 | Sin entorno staging; se cubre parcialmente con CP-20 | Rendimiento de escrituras y de la PWA móvil sin medir |
 | CP-33, CP-35 | Sin acceso a usuarios reales de Kotoduo | Usabilidad no validada con operarios (brecha de ES2) |
+| CP-26, CP-30 | D2 pasó a (b) al congelar `v0.9` (D28): no hay refresh token | Robo de un access token válido por hasta 10 min |
 
 ---
 
@@ -268,6 +271,7 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 | POST | `/api/v1/auth/login` | Público | CP-07, CP-09, CP-29 |
 | POST | `/api/v1/auth/refresh` | Sesión (D2) | CP-26, CP-30 |
 | POST | `/api/v1/auth/logout` | Sesión | — |
+| POST | `/api/v1/auth/cambiar-clave` | Sesión (incluida la que debe cambiar clave) | CP-07 |
 | GET | `/api/v1/plantillas` | Vendedor, Encargada | — |
 | POST | `/api/v1/ordenes` | Vendedor, Encargada | CP-06, CP-11 |
 | GET | `/api/v1/ordenes`, `/ordenes/{id}` | Vendedor, Encargada, Admin | CP-24 |
@@ -277,7 +281,7 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 | POST | `/api/v1/etapas/{id}/terminar` | Operario (dueño) | CP-12, CP-13, CP-19, CP-27 |
 | GET | `/api/v1/insumos` | Encargada | — |
 | GET, POST | `/api/v1/alertas` | GET: Encargada · POST: Operario | CP-14, CP-15, CP-25 |
-| GET | `/api/v1/panel` | Encargada, Admin | CP-18, CP-23 |
+| GET | `/api/v1/panel` | Encargada, Admin, Vendedor (`panel.ver`, Tabla 7.1) | CP-18, CP-23 |
 | GET | `/api/v1/bitacora` | Admin | CP-28 |
 
 ---
@@ -341,16 +345,16 @@ Se construye en este orden. Lo que no esté terminado al congelar el código pas
 
 ## 11. Checklist previa a la entrega (guía ES3 §8)
 
-- [ ] La versión implementada y sus limitaciones están declaradas.
-- [ ] Cada funcionalidad se vincula con una HU.
-- [ ] Las evidencias muestran acción y resultado, no pantallas estáticas.
-- [ ] Almacenamiento, consulta y restricciones comprobados en la base.
-- [ ] Cada mecanismo de seguridad tiene al menos una prueba.
-- [ ] Las instrucciones de instalación son reales y están probadas.
-- [ ] La matriz distingue Aprobado / Fallido / Bloqueado / No ejecutado.
-- [ ] Los resultados esperado y obtenido están registrados por separado.
-- [ ] Cada discrepancia tiene una recomendación trazable o constancia de su corrección.
-- [ ] El informe sigue las 13 secciones, sin "— criterio 3.X.X" en los títulos.
+- [x] La versión implementada y sus limitaciones están declaradas. _Informe §4 y Anexo A._
+- [x] Cada funcionalidad se vincula con una HU. _Tablas 4.1, 5.1 y E.1._
+- [x] Las evidencias muestran acción y resultado, no pantallas estáticas. _Figuras 5.1–5.7 del E2E._
+- [x] Almacenamiento, consulta y restricciones comprobados en la base. _§6.2 (E-06, E-07) y §6.3._
+- [x] Cada mecanismo de seguridad tiene al menos una prueba. _Tabla 7.3, columna "Prueba"._
+- [x] Las instrucciones de instalación son reales y están probadas. _§8.3 (E-19); falta que las siga otra persona._
+- [x] La matriz distingue Aprobado / Fallido / Bloqueado / No ejecutado. _Tabla 9.5._
+- [x] Los resultados esperado y obtenido están registrados por separado. _Tabla 10.1 y fichas._
+- [x] Cada discrepancia tiene una recomendación trazable o constancia de su corrección. _Tablas 10.2–10.4._
+- [x] El informe sigue las 13 secciones, sin "— criterio 3.X.X" en los títulos. _Comprobado en el `.docx` generado._
 
 ---
 
